@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: layout('库存统计', '按库存批次查看数量与金额', 'inventoryStats', ~{::content})">
+<body>
+<th:block th:fragment="content">
+    <section class="toolbar panel flat">
+        <form class="search-form wide-search auto-filter" th:action="@{/inventory-stats}">
+            <label>商品
+                <select name="goodsId" data-auto-submit>
+                    <option value="">所有商品</option>
+                    <option th:each="g : ${filterGoodsList}"
+                            th:value="${g.id}"
+                            th:selected="${goodsId == g.id}"
+                            th:text="${g.name + '-' + (g.type == null ? '' : g.type) + '-' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option>
+                </select>
+            </label>
+            <label>排序字段
+                <select name="sortBy" data-auto-submit>
+                    <option value="stock" th:selected="${sortBy == 'stock'}">库存数量</option>
+                    <option value="amount" th:selected="${sortBy == 'amount'}">库存金额</option>
+                </select>
+            </label>
+            <label>排序方式
+                <select name="sortDir" data-auto-submit>
+                    <option value="asc" th:selected="${sortDir == 'asc'}">升序</option>
+                    <option value="desc" th:selected="${sortDir == 'desc'}">降序</option>
+                </select>
+            </label>
+            <button class="btn" type="submit">搜索</button>
+        </form>
+    </section>
+
+    <section class="metric-grid inventory-summary">
+        <article class="metric-card accent-green">
+            <span>库存批次</span>
+            <strong th:text="${#lists.size(rows)}">0</strong>
+            <small>当前有库存批次</small>
+        </article>
+        <article class="metric-card accent-blue">
+            <span>库存数量</span>
+            <strong th:text="${totalStock}">0</strong>
+            <small>当前库存总件数</small>
+        </article>
+        <article class="metric-card accent-yellow">
+            <span>库存总金额</span>
+            <strong th:text="${@money.format(totalAmount)}">￥0.00</strong>
+            <small>按每条库存记录汇总</small>
+        </article>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head">
+            <h2>库存统计明细</h2>
+            <span class="soft-label">默认按库存数量升序</span>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>商品</th>
+                    <th>生产商</th>
+                    <th>进货单价</th>
+                    <th>库存</th>
+                    <th>库存总金额</th>
+                    <th>商品来源</th>
+                    <th>入库时间</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${rows}">
+                    <td>
+                        <strong th:text="${row.goodsName}">商品</strong>
+                        <small th:text="${(row.goodsType == null ? '' : row.goodsType) + (row.goodsModel == null || row.goodsModel == '' ? '' : '-' + row.goodsModel)}">类型型号</small>
+                    </td>
+                    <td th:text="${row.producer}">生产商</td>
+                    <td th:text="${@money.format(row.unitPrice)}">￥0.00</td>
+                    <td th:text="${row.stock}">0</td>
+                    <td th:text="${@money.format(row.stockAmount)}">￥0.00</td>
+                    <td th:text="${row.goodsSource == null || row.goodsSource == '' ? '厂家进货' : row.goodsSource}">厂家进货</td>
+                    <td th:text="${row.createdTime == null ? '-' : #temporals.format(row.createdTime, 'yyyy-MM-dd HH:mm')}">时间</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(rows)}">
+                    <td colspan="7" class="empty">暂无库存统计数据</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</th:block>
+</body>
+</html>

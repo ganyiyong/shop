@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: layout('额外成本', '按月份管理支出', 'costs', ~{::content})">
+<body>
+<th:block th:fragment="content">
+    <section class="toolbar panel flat">
+        <form class="search-form" th:action="@{/costs}" id="costFilterForm">
+            <label>月份
+                <button class="date-range-trigger month-trigger" type="button" data-month-picker>
+                    <span data-month-label th:text="${#temporals.format(month.atDay(1), 'yyyy年 M月')}">2026年 5月</span>
+                </button>
+            </label>
+            <input type="hidden" name="month" th:value="${month}" data-month-value>
+            <button class="btn" type="submit">筛选</button>
+        </form>
+        <button class="btn primary" type="button" data-modal-open="costModal">新增支出</button>
+    </section>
+
+    <section class="panel">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>类目</th><th>金额</th><th>备注</th><th>时间</th><th>操作</th></tr></thead>
+                <tbody>
+                <tr th:each="c : ${pageData.records}">
+                    <td><span class="category" th:text="${c.category}">类目</span></td>
+                    <td class="text-bad" th:text="${@money.format(c.amount)}">￥0.00</td>
+                    <td th:text="${c.remark}">备注</td>
+                    <td th:text="${#temporals.format(c.createdTime, 'yyyy-MM-dd HH:mm')}">时间</td>
+                    <td><form method="post" th:action="@{/costs/delete}" onsubmit="return confirm('确认删除该支出记录？')"><input type="hidden" name="id" th:value="${c.id}"><button class="btn danger small" type="submit">删除</button></form></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(pageData.records)}"><td colspan="5" class="empty">当前月份暂无额外成本</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="pager"><span th:text="${'共 ' + pageData.total + ' 条，第 ' + pageData.page + ' / ' + pageData.totalPages + ' 页'}">共 0 条</span><div><a class="btn small" th:classappend="${!pageData.hasPrevious} ? ' disabled'" th:href="@{/costs(month=${month},page=${pageData.previousPage},size=${pageData.size})}">上一页</a><a class="btn small" th:classappend="${!pageData.hasNext} ? ' disabled'" th:href="@{/costs(month=${month},page=${pageData.nextPage},size=${pageData.size})}">下一页</a></div></div>
+    </section>
+
+    <div class="date-popover month-popover" data-month-popover>
+        <div class="month-head"><button type="button" data-month-prev>‹</button><b data-month-title>2026年</b><button type="button" data-month-next>›</button></div>
+        <div class="month-grid" data-month-grid></div>
+        <div class="quick-actions"><button type="button" data-month-now>本月</button><button class="primary-link" type="button" data-month-apply>确定</button></div>
+    </div>
+
+    <div class="modal" id="costModal" aria-hidden="true">
+        <div class="modal-mask" data-modal-close></div>
+        <section class="modal-panel small-modal">
+            <div class="modal-head"><h2>新增支出</h2><button class="icon-btn" type="button" data-modal-close>×</button></div>
+            <form class="grid-form" method="post" th:action="@{/costs/save}" th:object="${cost}">
+                <div class="wide form-field">
+                    <span>支出类目</span>
+                    <div class="radio-group">
+                        <label><input type="radio" th:field="*{category}" value="1号仓库" required>1号仓库</label>
+                        <label><input type="radio" th:field="*{category}" value="2号仓库">2号仓库</label>
+                        <label><input type="radio" th:field="*{category}" value="3号仓库">3号仓库</label>
+                        <label><input type="radio" th:field="*{category}" value="售后补件">售后补件</label>
+                        <label><input type="radio" th:field="*{category}" value="其他支出">其他支出</label>
+                    </div>
+                </div>
+                <label>支出金额<input type="number" step="0.01" th:field="*{amount}" min="0" required></label>
+                <label class="wide">备注<input th:field="*{remark}" maxlength="50"></label>
+                <div class="form-actions wide"><button class="btn" type="button" data-modal-close>取消</button><button class="btn primary" type="submit">保存支出</button></div>
+            </form>
+        </section>
+    </div>
+</th:block>
+</body>
+</html>

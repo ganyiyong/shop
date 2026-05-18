@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title, subtitle, active, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} + ' - 电商库存系统'">电商库存系统</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/assets/css/app.css(v=${#dates.createNow().time})}">
+</head>
+<body>
+<div class="app-shell">
+    <div class="mobile-header">
+        <button class="mobile-menu-btn" type="button" data-mobile-menu aria-label="打开菜单">☰</button>
+        <strong th:text="${title}">首页</strong>
+        <div class="mobile-actions">
+            <button th:if="${active == 'stats'}" class="mobile-sale-btn" type="button" data-modal-open="saleModal" aria-label="录入销售">＋</button>
+            <span class="mobile-avatar" th:text="${#strings.isEmpty(session.loginUser) ? 'A' : #strings.substring(session.loginUser,0,1)}">A</span>
+        </div>
+    </div>
+    <div class="drawer-mask" data-mobile-mask></div>
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="brand-mark">N</span>
+            <div>
+                <strong>ShopStock</strong>
+                <small>电商库存系统</small>
+            </div>
+        </div>
+        <nav class="nav">
+            <span class="nav-group">经营概览</span>
+            <a th:classappend="${active == 'stats'} ? 'active'" th:href="@{/dashboard}"><span>▦</span>首页看板</a>
+            <a th:classappend="${active == 'inventoryStats'} ? 'active'" th:href="@{/inventory-stats}"><span>≡</span>库存统计</a>
+            <a th:classappend="${active == 'assets'} ? 'active'" th:href="@{/assets}"><span>¤</span>资产管理</a>
+            <span class="nav-group">业务管理</span>
+            <a th:classappend="${active == 'goods'} ? 'active'" th:href="@{/goods}"><span>□</span>商品列表</a>
+            <a th:classappend="${active == 'stock'} ? 'active'" th:href="@{/stock}"><span>◇</span>库存管理</a>
+            <a th:classappend="${active == 'costs'} ? 'active'" th:href="@{/costs}"><span>￥</span>额外成本</a>
+            <a th:classappend="${active == 'sales'} ? 'active'" th:href="@{/sales}"><span>✓</span>销售管理</a>
+        </nav>
+        <div class="side-footer">
+            <div class="side-user">
+                <span class="side-avatar" th:text="${#strings.isEmpty(session.loginUser) ? 'A' : #strings.substring(session.loginUser,0,1)}">A</span>
+                <div><strong th:text="${session.loginUser}">admin</strong><small>管理员</small></div>
+            </div>
+            <a class="logout" th:href="@{/logout}">退出登录</a>
+        </div>
+    </aside>
+    <main class="main">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow" th:text="${subtitle}">经营概览</p>
+                <h1 th:text="${title}">首页看板</h1>
+            </div>
+            <div class="user-pill"><span class="dot"></span><span th:text="${session.loginUser}">admin</span></div>
+        </header>
+        <th:block th:replace="${content}"></th:block>
+    </main>
+</div>
+<script th:src="@{/assets/js/app.js(v=${#dates.createNow().time})}"></script>
+</body>
+</html>

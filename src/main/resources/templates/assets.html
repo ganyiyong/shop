@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: layout('资产管理', '现金、货款、库存和贷款月度统计', 'assets', ~{::content})">
+<body>
+<th:block th:fragment="content">
+    <section class="toolbar panel flat asset-filter-panel" data-mobile-collapse>
+        <button class="asset-filter-toggle" type="button" data-mobile-collapse-toggle aria-expanded="false">
+            <span>
+                <b>筛选条件</b>
+                <small th:text="${#temporals.format(month.atDay(1), 'yyyy年 M月')} + ' · 点击展开'">2026年 5月 · 点击展开</small>
+            </span>
+            <i aria-hidden="true"></i>
+        </button>
+        <div class="asset-filter-body" data-mobile-collapse-body>
+            <form class="search-form" th:action="@{/assets}">
+                <label>统计月份
+                    <button class="date-range-trigger month-trigger" type="button" data-month-picker>
+                        <span data-month-label th:text="${#temporals.format(month.atDay(1), 'yyyy年 M月')}">2026年 5月</span>
+                    </button>
+                </label>
+                <input type="hidden" name="month" th:value="${month}" data-month-value>
+                <button class="btn" type="submit">筛选</button>
+            </form>
+            <div class="toolbar-actions">
+                <button class="btn" type="button" data-modal-open="rateModal">维护系数</button>
+                <button class="btn primary" type="button" data-modal-open="assetModal">录入资产</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="asset-hero">
+        <div>
+            <p th:text="${#temporals.format(month.atDay(1), 'yyyy年 M月')}">2026年 5月</p>
+            <h2>资产总览</h2>
+            <span>进货金额默认读取当前有效库存金额，保存后会作为本月快照参与统计。</span>
+        </div>
+        <div class="asset-hero-total asset-hero-pair">
+            <div>
+                <small>实际存款</small>
+                <strong th:text="${@money.format(actualDeposit)}">￥0.00</strong>
+            </div>
+            <div>
+                <small>本月存款</small>
+                <strong th:text="${@money.format(monthDeposit)}">￥0.00</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="metric-grid asset-metrics">
+        <article class="metric-card accent-blue">
+            <span>现金存款</span>
+            <strong th:text="${@money.format(asset.cashDeposit)}">￥0.00</strong>
+            <small>手上所有现金</small>
+        </article>
+        <article class="metric-card accent-green">
+            <span>进货金额</span>
+            <strong th:text="${@money.format(purchaseAmount)}">￥0.00</strong>
+            <small th:text="${asset.id == null ? '当前有效库存金额' : '本月保存的库存金额快照'}">当前有效库存金额</small>
+        </article>
+        <article class="metric-card accent-yellow">
+            <span>待确认货款</span>
+            <strong th:text="${@money.format(receivableTotal)}">￥0.00</strong>
+            <small>各店铺待结算</small>
+        </article>
+        <article class="metric-card accent-red">
+            <span>贷款总额</span>
+            <strong th:text="${@money.format(loanTotal)}">￥0.00</strong>
+            <small>信用卡、花呗和其他贷款</small>
+        </article>
+    </section>
+
+    <section class="content-grid two">
+        <div class="panel">
+            <div class="panel-head">
+                <h2>贷款与资产项目</h2>
+            <span class="soft-label">借出去、保证金、公积金计入实际存款</span>
+            </div>
+            <div class="asset-list">
+                <div><span>招商银行信用卡</span><b class="text-bad" th:text="${@money.format(asset.cmbCreditLoan)}">￥0.00</b></div>
+                <div><span>广州银行信用卡</span><b class="text-bad" th:text="${@money.format(asset.gzCreditLoan)}">￥0.00</b></div>
+                <div><span>支付宝花呗</span><b class="text-bad" th:text="${@money.format(asset.huabeiLoan)}">￥0.00</b></div>
+                <div><span>其他贷款</span><b class="text-bad" th:text="${@money.format(asset.otherLoan)}">￥0.00</b></div>
+                <div><span>借出去</span><b th:text="${@money.format(asset.lentOut)}">￥0.00</b></div>
+                <div><span>保证金</span><b th:text="${@money.format(asset.guaranteeDeposit)}">￥0.00</b></div>
+                <div><span>公积金</span><b th:text="${@money.format(asset.housingFund)}">￥0.00</b></div>
+                <div class="asset-total"><span>资产项目合计</span><b th:text="${@money.format(assetItemTotal)}">￥0.00</b></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head">
+                <h2>店铺待确认货款</h2>
+                <span class="soft-label">每月手动录入</span>
+            </div>
+            <div class="asset-list">
+                <div><span>模型小屋</span><b th:text="${@money.format(asset.modelHouseReceivable)}">￥0.00</b></div>
+                <div><span>米乐模型</span><b th:text="${@money.format(asset.mileReceivable)}">￥0.00</b></div>
+                <div><span>星域模型</span><b th:text="${@money.format(asset.xingyuReceivable)}">￥0.00</b></div>
+                <div><span>幻影模玩</span><b th:text="${@money.format(asset.huanyingReceivable)}">￥0.00</b></div>
+                <div><span>完美动漫</span><b th:text="${@money.format(asset.wanmeiReceivable)}">￥0.00</b></div>
+                <div><span>维利动漫</span><b th:text="${@money.format(asset.weiliReceivable)}">￥0.00</b></div>
+                <div class="asset-total"><span>货款合计</span><b th:text="${@money.format(receivableTotal)}">￥0.00</b></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="asset-summary-grid">
+            <div><span>实际存款</span><b th:text="${@money.format(actualDeposit)}">￥0.00</b><small>现金 + 店铺货款 + 进货金额 + 借出/保证金/公积金 - 贷款金额</small></div>
+            <div><span>预估存款</span><b th:text="${@money.format(estimatedDeposit)}">￥0.00</b><small th:text="${'实际存款 + 进货金额 * ' + estimateRate}">实际存款 + 进货金额 * 0.4</small></div>
+            <div><span>去年存款</span><b th:text="${@money.format(lastYearDeposit)}">￥0.00</b><small th:text="${lastYearAutoDeposit == null ? '未找到去年12月记录，使用手动录入' : '读取去年12月实际存款'}">读取去年12月实际存款</small></div>
+            <div><span>今年利润</span><b th:text="${@money.format(yearlyProfit)}">￥0.00</b><small>实际存款 - 去年存款</small></div>
+        </div>
+        <p class="asset-remark" th:if="${asset.remark != null and !asset.remark.trim().isEmpty()}" th:text="${asset.remark}">备注</p>
+    </section>
+
+    <div class="date-popover month-popover" data-month-popover>
+        <div class="month-head"><button type="button" data-month-prev>‹</button><b data-month-title>2026年</b><button type="button" data-month-next>›</button></div>
+        <div class="month-grid" data-month-grid></div>
+        <div class="quick-actions"><button type="button" data-month-now>本月</button><button class="primary-link" type="button" data-month-apply>确定</button></div>
+    </div>
+
+    <div class="modal" id="assetModal" aria-hidden="true">
+        <div class="modal-mask" data-modal-close></div>
+        <section class="modal-panel wide-modal">
+            <div class="modal-head"><h2>录入资产</h2><button class="icon-btn" type="button" data-modal-close>×</button></div>
+            <form class="grid-form" method="post" th:action="@{/assets/save}" th:object="${asset}">
+                <input type="hidden" th:field="*{id}">
+                <label>统计月份<input type="month" th:field="*{month}" required></label>
+                <label>进货金额<input type="number" step="0.01" th:field="*{purchaseAmount}" min="0"></label>
+                <label>现金存款<input type="number" step="0.01" th:field="*{cashDeposit}" min="0"></label>
+                <label>去年存款<input type="number" step="0.01" th:field="*{lastYearDeposit}" min="0" th:readonly="${lastYearAutoDeposit != null}"></label>
+                <p class="wide soft-label" th:text="${lastYearAutoDeposit == null ? '去年存款：如果去年12月没有资产记录，可以在这里手动填写。' : '去年存款已自动读取去年12月实际存款。'}">去年存款说明</p>
+
+                <div class="wide form-section-title">贷款平台</div>
+                <label>招商银行信用卡<input type="number" step="0.01" th:field="*{cmbCreditLoan}" min="0"></label>
+                <label>广州银行信用卡<input type="number" step="0.01" th:field="*{gzCreditLoan}" min="0"></label>
+                <label>支付宝花呗<input type="number" step="0.01" th:field="*{huabeiLoan}" min="0"></label>
+                <label>其他贷款<input type="number" step="0.01" th:field="*{otherLoan}" min="0"></label>
+
+                <div class="wide form-section-title">资产项目</div>
+                <label>借出去<input type="number" step="0.01" th:field="*{lentOut}" min="0"></label>
+                <label>保证金<input type="number" step="0.01" th:field="*{guaranteeDeposit}" min="0"></label>
+                <label>公积金<input type="number" step="0.01" th:field="*{housingFund}" min="0"></label>
+
+                <div class="wide form-section-title">店铺待确认货款</div>
+                <label>模型小屋<input type="number" step="0.01" th:field="*{modelHouseReceivable}" min="0"></label>
+                <label>米乐模型<input type="number" step="0.01" th:field="*{mileReceivable}" min="0"></label>
+                <label>星域模型<input type="number" step="0.01" th:field="*{xingyuReceivable}" min="0"></label>
+                <label>幻影模玩<input type="number" step="0.01" th:field="*{huanyingReceivable}" min="0"></label>
+                <label>完美动漫<input type="number" step="0.01" th:field="*{wanmeiReceivable}" min="0"></label>
+                <label>维利动漫<input type="number" step="0.01" th:field="*{weiliReceivable}" min="0"></label>
+                <label class="wide">备注<textarea th:field="*{remark}" maxlength="200"></textarea></label>
+                <div class="form-actions wide"><button class="btn" type="button" data-modal-close>取消</button><button class="btn primary" type="submit">保存资产</button></div>
+            </form>
+        </section>
+    </div>
+
+    <div class="modal" id="rateModal" aria-hidden="true">
+        <div class="modal-mask" data-modal-close></div>
+        <section class="modal-panel small-modal">
+            <div class="modal-head"><h2>维护预估系数</h2><button class="icon-btn" type="button" data-modal-close>×</button></div>
+            <form class="grid-form" method="post" th:action="@{/assets/rate/save}">
+                <input type="hidden" name="month" th:value="${month}">
+                <label class="wide">预估系数
+                    <input type="number" name="estimateRate" step="0.0001" min="0" th:value="${estimateRate}" required>
+                </label>
+                <p class="wide soft-label">当前公式：预估存款 = 实际存款 + 进货金额 * 预估系数，默认值为 0.4。</p>
+                <div class="form-actions wide"><button class="btn" type="button" data-modal-close>取消</button><button class="btn primary" type="submit">保存系数</button></div>
+            </form>
+        </section>
+    </div>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: layout('商品列表', '商品档案管理', 'goods', ~{::content})">
+<body>
+<th:block th:fragment="content">
+    <section class="toolbar panel flat">
+        <form class="search-form wide-search auto-filter" th:action="@{/goods}">
+            <label>商品
+                <select name="goodsId" data-auto-submit>
+                    <option value="">全部商品</option>
+                    <option th:each="g : ${filterGoodsList}"
+                            th:value="${g.id}"
+                            th:selected="${goodsId == g.id}"
+                            th:text="${g.name + '-' + (g.type == null ? '' : g.type) + '-' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option>
+                </select>
+            </label>
+            <label>关键词<input type="search" name="keyword" placeholder="搜索类型、厂家、型号" th:value="${keyword}"></label>
+            <button class="btn" type="submit">搜索</button>
+        </form>
+        <button class="btn primary" type="button" data-modal-open="goodsModal">添加商品</button>
+    </section>
+
+    <section class="panel">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>商品</th><th>类型</th><th>厂家</th><th>型号</th><th>库存</th><th>库存金额</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody>
+                <tr th:each="g : ${pageData.records}">
+                    <td><div class="goods-cell"><span class="avatar" th:text="${#strings.isEmpty(g.name) ? '商' : #strings.substring(g.name,0,1)}">商</span><div><strong th:text="${g.name}">商品</strong><small th:text="${g.keywords}">关键词</small></div></div></td>
+                    <td th:text="${g.type}">类型</td>
+                    <td th:text="${g.producer}">厂家</td>
+                    <td th:text="${g.model}">型号</td>
+                    <td th:text="${g.stock}">0</td>
+                    <td th:text="${@money.format(g.stockAmount)}">￥0.00</td>
+                    <td><span th:class="${g.state == '0'} ? 'status on' : 'status off'" th:text="${g.state == '0'} ? '启用' : '停用'">启用</span></td>
+                    <td class="actions">
+                        <button class="btn small" type="button" data-modal-open="goodsModal" th:attr="data-id=${g.id},data-name=${g.name},data-type=${g.type},data-producer=${g.producer},data-model=${g.model},data-imgurl=${g.imgUrl},data-keywords=${g.keywords},data-sortkey=${g.sortKey},data-state=${g.state},data-remark=${g.remark}">编辑</button>
+                        <form method="post" th:action="@{/goods/delete}" onsubmit="return confirm('确认删除该商品？')"><input type="hidden" name="id" th:value="${g.id}"><button class="btn danger small" type="submit">删除</button></form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(pageData.records)}"><td colspan="8" class="empty">暂无商品</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="pager"><span th:text="${'共 ' + pageData.total + ' 条，第 ' + pageData.page + ' / ' + pageData.totalPages + ' 页'}">共 0 条</span><div><a class="btn small" th:classappend="${!pageData.hasPrevious} ? ' disabled'" th:href="@{/goods(goodsId=${goodsId},keyword=${keyword},page=${pageData.previousPage},size=${pageData.size})}">上一页</a><a class="btn small" th:classappend="${!pageData.hasNext} ? ' disabled'" th:href="@{/goods(goodsId=${goodsId},keyword=${keyword},page=${pageData.nextPage},size=${pageData.size})}">下一页</a></div></div>
+    </section>
+
+    <div class="modal" id="goodsModal" aria-hidden="true">
+        <div class="modal-mask" data-modal-close></div>
+        <section class="modal-panel">
+            <div class="modal-head"><h2>商品信息</h2><button class="icon-btn" type="button" data-modal-close>×</button></div>
+            <form class="grid-form" method="post" th:action="@{/goods/save}">
+                <input type="hidden" name="id" data-field="id">
+                <label>商品名称<input name="name" data-field="name" maxlength="60" required></label>
+                <label>类型
+                    <select name="type" data-field="type" required>
+                        <option value="">请选择类型</option>
+                        <option value="MG">MG</option>
+                        <option value="HG">HG</option>
+                    </select>
+                </label>
+                <label>厂家
+                    <select name="producer" data-field="producer" required>
+                        <option value="">请选择厂家</option>
+                        <option value="大班">大班</option>
+                        <option value="高高">高高</option>
+                        <option value="超新星">超新星</option>
+                        <option value="模匠魂">模匠魂</option>
+                        <option value="模寿">模寿</option>
+                    </select>
+                </label>
+                <label>型号<input name="model" data-field="model" maxlength="10"></label>
+                <label>图片地址<input name="imgUrl" data-field="imgurl" maxlength="100"></label>
+                <label>关键词<input name="keywords" data-field="keywords" maxlength="60"></label>
+                <label>排序<input type="number" name="sortKey" data-field="sortkey" value="0"></label>
+                <label>状态<select name="state" data-field="state"><option value="0">启用</option><option value="1">停用</option></select></label>
+                <label class="wide">备注<textarea name="remark" data-field="remark" maxlength="100"></textarea></label>
+                <div class="form-actions wide"><button class="btn" type="button" data-modal-close>取消</button><button class="btn primary" type="submit">保存商品</button></div>
+            </form>
+        </section>
+    </div>
+</th:block>
+</body>
+</html>
