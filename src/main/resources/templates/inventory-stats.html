@@ -11,7 +11,7 @@
                     <option th:each="g : ${filterGoodsList}"
                             th:value="${g.id}"
                             th:selected="${goodsId == g.id}"
-                            th:text="${g.name + '-' + (g.type == null ? '' : g.type) + '-' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option>
+                            th:text="${g.name + ':' + (g.type == null ? '' : g.type) + ':' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option>
                 </select>
             </label>
             <label>排序字段

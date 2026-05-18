@@ -47,7 +47,7 @@ public class SaleRepository {
         int pageSize = Math.max(size, 1);
         queryArgs.add(pageSize);
         queryArgs.add((currentPage - 1) * pageSize);
-        List<Sale> records = jdbcTemplate.query("SELECT s.*, g.name goodsName " +
+        List<Sale> records = jdbcTemplate.query("SELECT s.*, " + goodsNameSql() + " goodsName " +
                 "FROM t_shop_sale s " +
                 "LEFT JOIN t_shop_goods g ON g.id = s.goodsId " + where + " " + "ORDER BY s.createdTime DESC, s.id DESC " +
                 "LIMIT ? OFFSET ? ", RowMappers.SALE, queryArgs.toArray());
@@ -69,7 +69,7 @@ public class SaleRepository {
             where += " AND s.createdTime < ?";
             args.add(endTime);
         }
-        return jdbcTemplate.queryForList("SELECT CONCAT(COALESCE(g.name, '未知商品'), IF(g.model IS NULL OR g.model = '', '', CONCAT('(', g.model, ')'))) goodsName, " +
+        return jdbcTemplate.queryForList("SELECT " + goodsNameSql() + " goodsName, " +
                 "       COALESCE(NULLIF(s.goodsSource, ''), '进货') goodsSource, " +
                 "       COUNT(*) saleCount, " +
                 "       COALESCE(SUM(s.costPrice), 0) costPrice, " +
@@ -77,7 +77,7 @@ public class SaleRepository {
                 "       COALESCE(SUM(s.charge), 0) charge, " +
                 "       COALESCE(SUM(s.profit), 0) profit " +
                 "FROM t_shop_sale s " +
-                "LEFT JOIN t_shop_goods g ON g.id = s.goodsId " + where + " " + "GROUP BY s.goodsId, g.name, g.model, COALESCE(NULLIF(s.goodsSource, ''), '进货') " +
+                "LEFT JOIN t_shop_goods g ON g.id = s.goodsId " + where + " " + "GROUP BY s.goodsId, g.name, g.type, g.model, COALESCE(NULLIF(s.goodsSource, ''), '进货') " +
                 "ORDER BY saleCount DESC, profit DESC, goodsName ", args.toArray());
     }
 
@@ -93,5 +93,9 @@ public class SaleRepository {
 
     private static double n(Double value) {
         return value == null ? 0D : value;
+    }
+
+    private static String goodsNameSql() {
+        return "COALESCE(NULLIF(CONCAT_WS(':', NULLIF(g.name, ''), NULLIF(g.type, ''), NULLIF(g.model, '')), ''), '未知商品')";
     }
 }

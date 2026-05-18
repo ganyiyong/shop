@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 - 电商库存系统</title>
+    <title>库存系统</title>
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
     <link rel="stylesheet" th:href="@{/assets/css/app.css(v=${#dates.createNow().time})}">
 </head>
@@ -25,7 +25,7 @@
             <span><b>成本</b><em>仓库支出月度归集</em></span>
         </div>
     </div>
-    <form class="login-form" method="post" th:action="@{/login}" data-login-form>
+    <form class="login-form" method="post" autocomplete="off" th:action="@{/login}" data-login-form>
         <div class="login-mobile-brand">
             <span class="brand-mark">N</span>
             <div><strong>ShopStock</strong><small>电商库存经营系统</small></div>
@@ -36,11 +36,12 @@
         <div class="alert" th:if="${error}" th:text="${error}">账号或密码错误</div>
         <label>
             账号
-            <input type="text" name="username" value="admin" required autocomplete="username" data-login-username>
+            <input type="text" name="username" value="admin" required autocomplete="off" data-login-username>
         </label>
         <label>
             密码
-            <input type="password" name="password" value="" required autocomplete="current-password" data-login-password>
+            <input type="text" value="" required autocomplete="off" data-login-password>
+            <input type="hidden" name="password" data-login-password-real>
         </label>
         <label class="remember-row">
             <input class="remember-checkbox" type="checkbox" name="rememberPassword" data-login-remember>

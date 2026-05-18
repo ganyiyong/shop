@@ -11,7 +11,7 @@
                     <option th:each="g : ${filterGoodsList}"
                             th:value="${g.id}"
                             th:selected="${goodsId == g.id}"
-                            th:text="${g.name + '-' + (g.type == null ? '' : g.type) + '-' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option>
+                            th:text="${g.name + ':' + (g.type == null ? '' : g.type) + ':' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option>
                 </select>
             </label>
             <label>库存范围
@@ -61,7 +61,7 @@
             <div class="modal-head"><h2>新增库存</h2><button class="icon-btn" type="button" data-modal-close>×</button></div>
             <form class="grid-form" method="post" th:action="@{/stock/save}" th:object="${stock}">
                 <input type="hidden" th:field="*{id}" data-field="id">
-                <label>商品<select th:field="*{goodsId}" data-field="goodsid" required><option value="">请选择商品</option><option th:each="g : ${goodsList}" th:value="${g.id}" th:text="${g.name + '-' + (g.type == null ? '' : g.type) + '-' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option></select></label>
+                <label>商品<select th:field="*{goodsId}" data-field="goodsid" required><option value="">请选择商品</option><option th:each="g : ${goodsList}" th:value="${g.id}" th:text="${g.name + ':' + (g.type == null ? '' : g.type) + ':' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option></select></label>
                 <label>箱数<input type="number" step="0.01" th:field="*{ctns}" data-field="ctns"></label>
                 <label>盒数<input type="number" th:field="*{number}" data-field="number" min="0" required></label>
                 <label>当前库存<input type="number" th:field="*{stock}" data-field="stock" min="0" placeholder="默认等于盒数"></label>

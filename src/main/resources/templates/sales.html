@@ -12,7 +12,7 @@
                     <option th:each="g : ${goodsList}"
                             th:value="${g.id}"
                             th:selected="${goodsId == g.id}"
-                            th:text="${g.name + '-' + (g.type == null ? '' : g.type) + '-' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option>
+                            th:text="${g.name + ':' + (g.type == null ? '' : g.type) + ':' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option>
                 </select>
             </label>
             <label>开始日期
@@ -137,7 +137,7 @@
         <section class="modal-panel">
             <div class="modal-head"><h2>录入销售</h2><button class="icon-btn" type="button" data-modal-close>×</button></div>
             <form class="grid-form" method="post" th:action="@{/sales/save}" th:object="${sale}">
-                <label>商品<select th:field="*{goodsId}" data-sale-goods required><option value="">请选择商品</option><option th:each="g : ${goodsList}" th:value="${g.id}" th:text="${g.name + '-' + (g.type == null ? '' : g.type) + '-' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option></select></label>
+                <label>商品<select th:field="*{goodsId}" data-sale-goods required><option value="">请选择商品</option><option th:each="g : ${goodsList}" th:value="${g.id}" th:text="${g.name + ':' + (g.type == null ? '' : g.type) + ':' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option></select></label>
                 <div class="form-field">
                     <span>选择库存</span>
                     <input type="hidden" th:field="*{stockId}" data-sale-stock-id>

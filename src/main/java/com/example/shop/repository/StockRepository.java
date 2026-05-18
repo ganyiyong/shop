@@ -41,7 +41,7 @@ public class StockRepository {
         List<Object> queryArgs = new ArrayList<>(args);
         queryArgs.add(pageSize);
         queryArgs.add((currentPage - 1) * pageSize);
-        List<Stock> records = jdbcTemplate.query("SELECT s.*, g.name goodsName " +
+        List<Stock> records = jdbcTemplate.query("SELECT s.*, " + goodsNameSql() + " goodsName " +
                 "FROM t_shop_stock s " +
                 "LEFT JOIN t_shop_goods g ON g.id = s.goodsId " + where + " " + "ORDER BY s.createdTime DESC, s.id DESC " +
                 "LIMIT ? OFFSET ? ", RowMappers.STOCK, queryArgs.toArray());
@@ -49,7 +49,7 @@ public class StockRepository {
     }
 
     public List<Stock> findAvailableByGoodsId(int goodsId) {
-        return jdbcTemplate.query("SELECT s.*, g.name goodsName " +
+        return jdbcTemplate.query("SELECT s.*, " + goodsNameSql() + " goodsName " +
                 "FROM t_shop_stock s " +
                 "LEFT JOIN t_shop_goods g ON g.id = s.goodsId " +
                 "WHERE s.goodsId=? AND s.stock > 0 " +
@@ -57,7 +57,7 @@ public class StockRepository {
     }
 
     public Stock findById(int id) {
-        List<Stock> stocks = jdbcTemplate.query("SELECT s.*, g.name goodsName " +
+        List<Stock> stocks = jdbcTemplate.query("SELECT s.*, " + goodsNameSql() + " goodsName " +
                 "FROM t_shop_stock s " +
                 "LEFT JOIN t_shop_goods g ON g.id = s.goodsId " +
                 "WHERE s.id=? ", RowMappers.STOCK, id);
@@ -100,5 +100,9 @@ public class StockRepository {
 
     private static double n(Double value) {
         return value == null ? 0D : value;
+    }
+
+    private static String goodsNameSql() {
+        return "CONCAT_WS(':', NULLIF(g.name, ''), NULLIF(g.type, ''), NULLIF(g.model, ''))";
     }
 }

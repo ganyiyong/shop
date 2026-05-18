@@ -11,6 +11,9 @@
         if (trigger && trigger.dataset[key] !== undefined) field.value = trigger.dataset[key] || '';
         else if (field.type === 'hidden') field.value = '';
       });
+      form.querySelectorAll('select').forEach(function (select) {
+        select.dispatchEvent(new Event('searchselect:refresh'));
+      });
     }
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
@@ -35,6 +38,142 @@
       if (form) form.submit();
     });
   });
+
+  function setupSearchableGoodsSelects() {
+    var selector = [
+      'select[name="goodsId"]',
+      'select[data-sale-goods]',
+      'select[data-field="goodsid"]'
+    ].join(',');
+
+    function normalize(value) {
+      return (value || '').toLowerCase().replace(/\s+/g, '');
+    }
+
+    function refresh(select) {
+      var combo = select.nextElementSibling;
+      if (!combo || !combo.classList.contains('search-select')) return;
+      var button = combo.querySelector('[data-search-select-button]');
+      var selected = select.options[select.selectedIndex];
+      if (button) button.textContent = selected ? selected.textContent : '';
+      combo.querySelectorAll('[data-search-select-option]').forEach(function (item) {
+        item.classList.toggle('selected', item.dataset.value === select.value);
+      });
+    }
+
+    function closeAll(except) {
+      document.querySelectorAll('.search-select.open').forEach(function (combo) {
+        if (combo !== except) combo.classList.remove('open');
+      });
+    }
+
+    function alignPanel(combo) {
+      var panel = combo.querySelector('.search-select-panel');
+      if (!panel) return;
+      panel.style.right = 'auto';
+      panel.style.left = '0';
+      var rect = panel.getBoundingClientRect();
+      if (rect.right > window.innerWidth - 12) {
+        panel.style.left = 'auto';
+        panel.style.right = '0';
+      }
+    }
+
+    document.querySelectorAll(selector).forEach(function (select) {
+      if (select.dataset.searchReady === 'true') return;
+      select.dataset.searchReady = 'true';
+
+      var combo = document.createElement('div');
+      combo.className = 'search-select';
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'search-select-button';
+      button.setAttribute('data-search-select-button', '');
+      button.setAttribute('aria-haspopup', 'listbox');
+      var panel = document.createElement('div');
+      panel.className = 'search-select-panel';
+      var input = document.createElement('input');
+      input.type = 'search';
+      input.className = 'search-select-input';
+      input.placeholder = '搜索商品';
+      input.setAttribute('data-search-select-input', '');
+      var list = document.createElement('div');
+      list.className = 'search-select-list';
+      list.setAttribute('role', 'listbox');
+      var empty = document.createElement('div');
+      empty.className = 'search-select-empty';
+      empty.textContent = '没有匹配的商品';
+
+      Array.prototype.slice.call(select.options).forEach(function (option) {
+        var item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'search-select-option';
+        item.textContent = option.textContent;
+        item.dataset.value = option.value;
+        item.dataset.search = normalize(option.textContent);
+        item.setAttribute('data-search-select-option', '');
+        item.setAttribute('role', 'option');
+        item.addEventListener('click', function () {
+          select.value = option.value;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          combo.classList.remove('open');
+          refresh(select);
+        });
+        list.appendChild(item);
+      });
+
+      panel.appendChild(input);
+      panel.appendChild(list);
+      panel.appendChild(empty);
+      combo.appendChild(button);
+      combo.appendChild(panel);
+      select.insertAdjacentElement('afterend', combo);
+      select.classList.add('native-search-select');
+
+      function filter() {
+        var keyword = normalize(input.value);
+        var count = 0;
+        list.querySelectorAll('[data-search-select-option]').forEach(function (item) {
+          var visible = !keyword || item.dataset.search.indexOf(keyword) !== -1;
+          item.hidden = !visible;
+          if (visible) count += 1;
+        });
+        empty.style.display = count ? 'none' : 'block';
+      }
+
+      button.addEventListener('click', function () {
+        var open = !combo.classList.contains('open');
+        closeAll(combo);
+        combo.classList.toggle('open', open);
+        if (open) {
+          input.value = '';
+          filter();
+          alignPanel(combo);
+          input.focus();
+        }
+      });
+      input.addEventListener('input', filter);
+      input.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') combo.classList.remove('open');
+        if (event.key === 'Enter') {
+          var first = list.querySelector('[data-search-select-option]:not([hidden])');
+          if (first) {
+            event.preventDefault();
+            first.click();
+          }
+        }
+      });
+      select.addEventListener('change', function () { refresh(select); });
+      select.addEventListener('searchselect:refresh', function () { refresh(select); });
+      refresh(select);
+      filter();
+    });
+
+    document.addEventListener('click', function (event) {
+      if (!event.target.closest('.search-select')) closeAll();
+    });
+  }
+
   document.querySelectorAll('[data-sales-view-submit]').forEach(function (button) {
     button.addEventListener('click', function () {
       var form = button.closest('form');
@@ -170,6 +309,7 @@
       button.addEventListener('click', function () {
         stockIdInput.value = button.dataset.stockId || '';
         goodsSelect.value = button.dataset.goodsId || goodsSelect.value;
+        goodsSelect.dispatchEvent(new Event('searchselect:refresh'));
         if (costInput) costInput.value = button.dataset.stockPrice || '';
         if (outCostInput) outCostInput.value = button.dataset.stockCost || '';
         if (salePriceInput) salePriceInput.value = button.dataset.stockSelling || '';
@@ -327,15 +467,73 @@
     if (!form || !window.localStorage) return;
     var usernameInput = form.querySelector('[data-login-username]');
     var passwordInput = form.querySelector('[data-login-password]');
+    var passwordRealInput = form.querySelector('[data-login-password-real]');
     var rememberInput = form.querySelector('[data-login-remember]');
     var storageKey = 'shop.login.remember';
-    if (!usernameInput || !passwordInput || !rememberInput) return;
+    if (!usernameInput || !passwordInput || !passwordRealInput || !rememberInput) return;
+    var maskChar = '*';
+    var realPassword = passwordInput.value || '';
+    var renderingPassword = false;
+
+    function mask(value) {
+      return new Array((value || '').length + 1).join(maskChar);
+    }
+
+    function replacePasswordRange(start, end, text) {
+      realPassword = realPassword.slice(0, start) + (text || '') + realPassword.slice(end);
+      renderPassword(start + (text || '').length);
+    }
+
+    function renderPassword(position) {
+      renderingPassword = true;
+      passwordInput.value = mask(realPassword);
+      passwordRealInput.value = realPassword;
+      if (document.activeElement === passwordInput && passwordInput.setSelectionRange) {
+        passwordInput.setSelectionRange(position, position);
+      }
+      renderingPassword = false;
+    }
+
+    passwordInput.addEventListener('beforeinput', function (event) {
+      var start = passwordInput.selectionStart || 0;
+      var end = passwordInput.selectionEnd || start;
+      var type = event.inputType || '';
+      if (type.indexOf('insert') === 0) {
+        event.preventDefault();
+        var text = type === 'insertFromPaste' && event.clipboardData ? event.clipboardData.getData('text') : event.data;
+        replacePasswordRange(start, end, text || '');
+      } else if (type === 'deleteContentBackward') {
+        event.preventDefault();
+        if (start === end && start > 0) start -= 1;
+        replacePasswordRange(start, end, '');
+      } else if (type === 'deleteContentForward') {
+        event.preventDefault();
+        if (start === end && end < realPassword.length) end += 1;
+        replacePasswordRange(start, end, '');
+      } else if (type === 'deleteByCut') {
+        event.preventDefault();
+        replacePasswordRange(start, end, '');
+      }
+    });
+
+    passwordInput.addEventListener('paste', function (event) {
+      if (!event.clipboardData) return;
+      event.preventDefault();
+      replacePasswordRange(passwordInput.selectionStart || 0, passwordInput.selectionEnd || 0, event.clipboardData.getData('text'));
+    });
+
+    passwordInput.addEventListener('input', function () {
+      if (renderingPassword) return;
+      if (passwordInput.value && passwordInput.value !== mask(passwordInput.value)) realPassword = passwordInput.value;
+      renderPassword(realPassword.length);
+    });
 
     try {
       var saved = JSON.parse(window.localStorage.getItem(storageKey) || 'null');
       if (saved && saved.remember) {
         usernameInput.value = saved.username || usernameInput.value;
-        passwordInput.value = saved.password || '';
+        realPassword = saved.password || '';
+        renderPassword(realPassword.length);
         rememberInput.checked = true;
       }
     } catch (error) {
@@ -351,14 +549,17 @@
         window.localStorage.setItem(storageKey, JSON.stringify({
           remember: true,
           username: usernameInput.value,
-          password: passwordInput.value
+          password: realPassword
         }));
       } else {
         window.localStorage.removeItem(storageKey);
       }
+      passwordRealInput.value = realPassword;
+      renderPassword(realPassword.length);
     });
   }
 
+  setupSearchableGoodsSelects();
   setupDatepickerRange();
   setupSalePlatform();
   setupStockPicker();
