@@ -78,9 +78,22 @@
             </div>
         </div>
         <div class="panel">
-            <div class="panel-head">
+            <div class="panel-head rank-panel-head">
                 <h2>库存金额排名</h2>
-                <a class="link" th:href="@{/stock}">查看库存</a>
+                <div class="rank-head-actions">
+                    <div class="rank-sort-group" data-rank-sort-controls>
+                        <button class="active" type="button" title="按库存金额排序" aria-label="按库存金额排序" data-rank-sort="value">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M17 7.5c-.9-1-2.3-1.6-4.1-1.6-2.3 0-4 1.2-4 3 0 1.9 1.6 2.6 3.8 3.1 2.1.5 3.5.9 3.5 2.8 0 1.8-1.7 3.2-4.1 3.2-2 0-3.6-.7-4.7-2"/></svg>
+                        </button>
+                        <button type="button" title="按库存数量排序" aria-label="按库存数量排序" data-rank-sort="stock">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V8M12 19V5M19 19v-8M4 19h16"/></svg>
+                        </button>
+                    </div>
+                    <button class="rank-dir-toggle active" type="button" title="从高到低" aria-label="从高到低" data-rank-dir-toggle data-rank-dir="desc">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path data-rank-dir-icon d="M12 5v14M6.5 13.5 12 19l5.5-5.5"/></svg>
+                    </button>
+                    <a class="link" th:href="@{/stock}">查看库存</a>
+                </div>
             </div>
             <div class="mobile-chart">
                 <div class="mobile-rank-chart" data-rank-chart></div>
@@ -89,7 +102,7 @@
                           th:attr="data-label=${row.NAME},data-value=${row.AMOUNT},data-stock=${row.STOCK}"></span>
                 </div>
             </div>
-            <div class="rank-list">
+            <div class="rank-list" data-rank-list>
                 <div class="rank-line" th:each="row : ${stockRanking}">
                     <span th:text="${row.NAME}">商品</span>
                     <b th:text="${row.STOCK + ' 件 / ' + @money.format(row.AMOUNT)}">0 件</b>

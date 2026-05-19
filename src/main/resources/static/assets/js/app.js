@@ -186,12 +186,14 @@
   }
   var mobileMenuButton = document.querySelector('[data-mobile-menu]');
   var mobileMask = document.querySelector('[data-mobile-mask]');
+  var mobileCloseButton = document.querySelector('[data-mobile-close]');
   if (mobileMenuButton) {
     mobileMenuButton.addEventListener('click', function () {
       document.body.classList.toggle('drawer-open');
     });
   }
   if (mobileMask) mobileMask.addEventListener('click', closeMobileMenu);
+  if (mobileCloseButton) mobileCloseButton.addEventListener('click', closeMobileMenu);
   document.querySelectorAll('.sidebar .nav a,.sidebar .logout').forEach(function (link) {
     link.addEventListener('click', closeMobileMenu);
   });
@@ -323,6 +325,8 @@
     });
     if (salePriceInput) salePriceInput.addEventListener('input', recalcSale);
     if (salePriceInput) salePriceInput.addEventListener('change', recalcSale);
+    if (outCostInput) outCostInput.addEventListener('input', recalcSale);
+    if (outCostInput) outCostInput.addEventListener('change', recalcSale);
     if (saleForm) {
       saleForm.addEventListener('submit', function (event) {
         if (!stockIdInput.value) {
@@ -403,6 +407,11 @@
         return { label: item.dataset.label || '', value: money(item.dataset.value), stock: money(item.dataset.stock) };
       });
     }
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, function (char) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char];
+      });
+    }
     function monthKey(date) {
       return date.getFullYear() + '-' + pad(date.getMonth() + 1);
     }
@@ -442,22 +451,91 @@
           '</div>';
       }).join('');
     }
+    function sortRankPoints(points, key, dir) {
+      var multiplier = dir === 'asc' ? 1 : -1;
+      return points.slice().sort(function (a, b) {
+        var diff = (a[key] || 0) - (b[key] || 0);
+        if (diff === 0) diff = (a.label || '').localeCompare(b.label || '', 'zh-Hans-CN');
+        return diff * multiplier;
+      });
+    }
     function renderRankBars(container) {
-      var points = readPoints(container).sort(function (a, b) { return b.value - a.value; });
-      var max = Math.max.apply(null, points.map(function (p) { return p.value; })) || 1;
+      var key = container.dataset.rankSort || 'value';
+      var dir = container.dataset.rankDir || 'desc';
+      var points = sortRankPoints(readPoints(container), key, dir);
+      var max = Math.max.apply(null, points.map(function (p) { return p[key]; })) || 1;
       container.innerHTML = points.map(function (p) {
-        var width = Math.max(4, Math.round((p.value / max) * 100));
+        var width = Math.max(4, Math.round((p[key] / max) * 100));
         var label = p.label.length > 12 ? p.label.slice(0, 12) + '…' : p.label;
         return '<div class="rank-bar">' +
-          '<div class="rank-bar-head"><span>' + label + '</span><b>' + fullMoney(p.value) + ' / ' + Math.round(p.stock).toLocaleString() + '件</b></div>' +
+          '<div class="rank-bar-head"><span>' + escapeHtml(label) + '</span><b>' + fullMoney(p.value) + ' / ' + Math.round(p.stock).toLocaleString() + '件</b></div>' +
           '<div class="rank-track"><div class="rank-fill" style="width:' + width + '%"></div></div>' +
           '</div>';
       }).join('');
     }
+    function renderRankList(list) {
+      var panel = list.closest('.panel');
+      var chart = panel && panel.querySelector('[data-rank-chart]');
+      if (!chart) return;
+      var key = chart.dataset.rankSort || 'value';
+      var dir = chart.dataset.rankDir || 'desc';
+      var points = sortRankPoints(readPoints(chart), key, dir);
+      list.innerHTML = points.map(function (p) {
+        var percent = key === 'stock'
+          ? Math.round(p.stock).toLocaleString() + ' 件'
+          : fullMoney(p.value);
+        return '<div class="rank-line">' +
+          '<span>' + escapeHtml(p.label) + '</span>' +
+          '<b><small>' + escapeHtml(percent) + '</small>' + Math.round(p.stock).toLocaleString() + ' 件 / ' + fullMoney(p.value) + '</b>' +
+          '</div>';
+      }).join('') || '<div class="empty block">暂无库存数据</div>';
+    }
+    function setupRankSortControls() {
+      var chart = document.querySelector('[data-rank-chart]');
+      var list = document.querySelector('[data-rank-list]');
+      if (!chart) return;
+      chart.dataset.rankSort = chart.dataset.rankSort || 'value';
+      chart.dataset.rankDir = chart.dataset.rankDir || 'desc';
+      function syncButtons(selector, value) {
+        document.querySelectorAll(selector).forEach(function (button) {
+          button.classList.toggle('active', button.dataset.rankSort === value);
+        });
+      }
+      function syncDirButton() {
+        var button = document.querySelector('[data-rank-dir-toggle]');
+        if (!button) return;
+        var desc = chart.dataset.rankDir !== 'asc';
+        var icon = button.querySelector('[data-rank-dir-icon]');
+        button.dataset.rankDir = desc ? 'desc' : 'asc';
+        button.title = desc ? '从高到低' : '从低到高';
+        button.setAttribute('aria-label', button.title);
+        if (icon) icon.setAttribute('d', desc ? 'M12 5v14M6.5 13.5 12 19l5.5-5.5' : 'M12 19V5M6.5 10.5 12 5l5.5 5.5');
+      }
+      function refreshRank() {
+        syncButtons('[data-rank-sort]', chart.dataset.rankSort);
+        syncDirButton();
+        renderRankBars(chart);
+        if (list) renderRankList(list);
+      }
+      document.querySelectorAll('[data-rank-sort]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          chart.dataset.rankSort = button.dataset.rankSort || 'value';
+          refreshRank();
+        });
+      });
+      var dirButton = document.querySelector('[data-rank-dir-toggle]');
+      if (dirButton) dirButton.addEventListener('click', function () {
+        chart.dataset.rankDir = chart.dataset.rankDir === 'asc' ? 'desc' : 'asc';
+        refreshRank();
+      });
+      refreshRank();
+    }
     function renderCharts() {
       document.querySelectorAll('[data-month-chart]').forEach(renderMonthBars);
+      document.querySelectorAll('[data-rank-list]').forEach(renderRankList);
       document.querySelectorAll('[data-rank-chart]').forEach(renderRankBars);
     }
+    setupRankSortControls();
     renderCharts();
     window.addEventListener('load', renderCharts);
   }

@@ -14,17 +14,21 @@
         <strong th:text="${title}">首页</strong>
         <div class="mobile-actions">
             <button th:if="${active == 'stats'}" class="mobile-sale-btn" type="button" data-modal-open="saleModal" aria-label="录入销售">＋</button>
-            <span class="mobile-avatar" th:text="${#strings.isEmpty(session.loginUser) ? 'A' : #strings.substring(session.loginUser,0,1)}">A</span>
         </div>
     </div>
     <div class="drawer-mask" data-mobile-mask></div>
     <aside class="sidebar">
-        <div class="brand">
-            <span class="brand-mark">N</span>
-            <div>
-                <strong>ShopStock</strong>
-                <small>电商库存系统</small>
+        <div class="drawer-top">
+            <div class="brand">
+                <span class="brand-mark">N</span>
+                <div>
+                    <strong>ShopStock</strong>
+                    <small>电商库存系统</small>
+                </div>
             </div>
+            <button class="drawer-close-btn" type="button" data-mobile-close aria-label="关闭菜单">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
         </div>
         <nav class="nav">
             <span class="nav-group">经营概览</span>

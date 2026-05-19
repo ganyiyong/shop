@@ -50,6 +50,14 @@ textarea {
   display: none;
 }
 
+.drawer-close-btn {
+  display: none;
+}
+
+.drawer-top {
+  display: contents;
+}
+
 .sidebar {
   position: sticky;
   top: 0;
@@ -267,6 +275,67 @@ textarea {
 .panel-head h2 {
   margin: 0;
   font-size: 18px;
+}
+
+.rank-head-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rank-sort-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid #dbe6f4;
+  border-radius: 8px;
+  background: #f6f9fe;
+}
+
+.rank-sort-group button,
+.rank-dir-toggle {
+  display: grid;
+  width: 32px;
+  height: 30px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: #64748b;
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.rank-dir-toggle {
+  border: 1px solid #dbe6f4;
+  background: #fff;
+}
+
+.rank-sort-group svg,
+.rank-dir-toggle svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rank-sort-group button:hover,
+.rank-dir-toggle:hover {
+  color: #1d4ed8;
+}
+
+.rank-sort-group button.active,
+.rank-dir-toggle.active {
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #2dd4bf);
+  box-shadow: 0 7px 16px rgba(37, 99, 235, 0.18);
 }
 
 .soft-label,
@@ -1114,7 +1183,18 @@ td small {
 }
 
 .rank-line b {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
   color: var(--primary);
+  text-align: right;
+}
+
+.rank-line b small {
+  display: none;
+  color: #8b96ad;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .modal-open {
@@ -1739,6 +1819,43 @@ td small {
     transition: transform 0.22s ease;
   }
 
+  .drawer-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 40px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .drawer-close-btn {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border: 1px solid #dbe6f4;
+    border-radius: 12px;
+    color: #64748b;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 12px 26px rgba(35, 48, 75, 0.12);
+    cursor: pointer;
+    transition: color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .drawer-close-btn:hover {
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #2dd4bf);
+    box-shadow: 0 14px 28px rgba(37, 99, 235, 0.20);
+    transform: translateY(-1px);
+  }
+
+  .drawer-close-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.3;
+    stroke-linecap: round;
+  }
+
   .drawer-open .sidebar {
     transform: translateX(0);
   }
@@ -1746,6 +1863,7 @@ td small {
   .brand {
     display: flex;
     gap: 12px;
+    min-width: 0;
     padding: 12px;
     border: 1px solid #e6edf7;
     border-radius: 8px;
@@ -2104,6 +2222,57 @@ td small {
     flex-direction: column;
   }
 
+  .rank-head-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+  }
+
+  .rank-panel-head {
+    align-items: center;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .rank-panel-head h2 {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 18px;
+    white-space: nowrap;
+  }
+
+  .rank-panel-head .rank-head-actions {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .rank-sort-group {
+    padding: 2px;
+    border-radius: 7px;
+  }
+
+  .rank-sort-group button,
+  .rank-dir-toggle {
+    width: 27px;
+    height: 27px;
+    border-radius: 5px;
+  }
+
+  .rank-sort-group svg,
+  .rank-dir-toggle svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .rank-head-actions .link {
+    display: none;
+  }
+
+  .rank-line b small {
+    display: block;
+  }
+
   .asset-filter-panel {
     gap: 0;
     padding: 0;
@@ -2111,6 +2280,7 @@ td small {
     border: 0;
     background: transparent;
     box-shadow: none;
+    margin-bottom: 10px !important;
   }
 
   .asset-filter-panel .asset-filter-toggle {
@@ -2118,7 +2288,7 @@ td small {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    min-height: 48px;
+    min-height: 44px;
     padding: 0 14px;
     border: 1px solid #dce6f5;
     border-radius: 8px;
@@ -2130,17 +2300,18 @@ td small {
   }
 
   .asset-filter-toggle span {
-    display: grid;
-    gap: 5px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
   }
 
   .asset-filter-toggle b {
-    font-size: 15px;
+    font-size: 17px;
   }
 
   .asset-filter-toggle small {
     color: var(--muted);
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .asset-filter-toggle i {
