@@ -47,12 +47,12 @@
     </section>
 
     <section class="metric-grid asset-metrics">
-        <article class="metric-card accent-blue">
+        <article class="metric-card accent-green">
             <span>现金存款</span>
-            <strong th:text="${@money.format(asset.cashDeposit)}">￥0.00</strong>
+            <strong class="cash-amount-green" th:text="${@money.format(asset.cashDeposit)}">￥0.00</strong>
             <small>手上所有现金</small>
         </article>
-        <article class="metric-card accent-green">
+        <article class="metric-card accent-blue">
             <span>进货金额</span>
             <strong th:text="${@money.format(purchaseAmount)}">￥0.00</strong>
             <small th:text="${asset.id == null ? '当前有效库存金额' : '本月保存的库存金额快照'}">当前有效库存金额</small>

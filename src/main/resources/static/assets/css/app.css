@@ -1466,6 +1466,16 @@ td small {
   font-weight: 700;
 }
 
+.cash-amount-green {
+  --tw-text-opacity: 1;
+  color: rgb(22 163 74 / var(--tw-text-opacity, 1));
+}
+
+.cash-amount-green-2 {
+  --tw-text-opacity: 1;
+  color: rgb(14 227 93 / var(--tw-text-opacity, 1));
+}
+
 .text-bad {
   color: var(--red);
   font-weight: 700;
