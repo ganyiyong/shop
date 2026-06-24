@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public class AssetSnapshot {
     private Integer id;
+    private Integer sourceAssetId;
     private String month;
     private Double purchaseAmount;
     private Double cashDeposit;
@@ -22,11 +23,18 @@ public class AssetSnapshot {
     private Double wanmeiReceivable;
     private Double weiliReceivable;
     private String remark;
+    private Double actualDeposit;
+    private Double monthDeposit;
+    private Double estimatedDeposit;
+    private Double yearlyProfit;
+    private LocalDateTime snapshotTime;
     private LocalDateTime createdTime;
     private LocalDateTime updatedTime;
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
+    public Integer getSourceAssetId() { return sourceAssetId; }
+    public void setSourceAssetId(Integer sourceAssetId) { this.sourceAssetId = sourceAssetId; }
     public String getMonth() { return month; }
     public void setMonth(String month) { this.month = month; }
     public Double getPurchaseAmount() { return purchaseAmount; }
@@ -63,8 +71,35 @@ public class AssetSnapshot {
     public void setWeiliReceivable(Double weiliReceivable) { this.weiliReceivable = weiliReceivable; }
     public String getRemark() { return remark; }
     public void setRemark(String remark) { this.remark = remark; }
+    public Double getActualDeposit() { return actualDeposit; }
+    public void setActualDeposit(Double actualDeposit) { this.actualDeposit = actualDeposit; }
+    public Double getMonthDeposit() { return monthDeposit; }
+    public void setMonthDeposit(Double monthDeposit) { this.monthDeposit = monthDeposit; }
+    public Double getEstimatedDeposit() { return estimatedDeposit; }
+    public void setEstimatedDeposit(Double estimatedDeposit) { this.estimatedDeposit = estimatedDeposit; }
+    public Double getYearlyProfit() { return yearlyProfit; }
+    public void setYearlyProfit(Double yearlyProfit) { this.yearlyProfit = yearlyProfit; }
+    public LocalDateTime getSnapshotTime() { return snapshotTime; }
+    public void setSnapshotTime(LocalDateTime snapshotTime) { this.snapshotTime = snapshotTime; }
     public LocalDateTime getCreatedTime() { return createdTime; }
     public void setCreatedTime(LocalDateTime createdTime) { this.createdTime = createdTime; }
     public LocalDateTime getUpdatedTime() { return updatedTime; }
     public void setUpdatedTime(LocalDateTime updatedTime) { this.updatedTime = updatedTime; }
+
+    public Double getReceivableTotal() {
+        return n(modelHouseReceivable) + n(mileReceivable) + n(xingyuReceivable) + n(huanyingReceivable)
+            + n(wanmeiReceivable) + n(weiliReceivable);
+    }
+
+    public Double getLoanTotal() {
+        return n(cmbCreditLoan) + n(gzCreditLoan) + n(huabeiLoan) + n(otherLoan);
+    }
+
+    public Double getAssetItemTotal() {
+        return n(lentOut) + n(guaranteeDeposit) + n(housingFund);
+    }
+
+    private double n(Double value) {
+        return value == null ? 0D : value;
+    }
 }

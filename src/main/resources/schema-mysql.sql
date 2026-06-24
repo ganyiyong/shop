@@ -91,5 +91,34 @@ CREATE TABLE IF NOT EXISTS `t_shop_asset_config` (
   UNIQUE KEY `uk_asset_config_key` (`configKey`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='资产配置';
 
+CREATE TABLE IF NOT EXISTS `t_shop_asset_snapshot_history` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sourceAssetId` int(11) DEFAULT NULL,
+  `month` varchar(7) NOT NULL,
+  `purchaseAmount` double(12,2) DEFAULT '0.00',
+  `cashDeposit` double(12,2) DEFAULT '0.00',
+  `cmbCreditLoan` double(12,2) DEFAULT '0.00',
+  `gzCreditLoan` double(12,2) DEFAULT '0.00',
+  `huabeiLoan` double(12,2) DEFAULT '0.00',
+  `otherLoan` double(12,2) DEFAULT '0.00',
+  `lentOut` double(12,2) DEFAULT '0.00',
+  `guaranteeDeposit` double(12,2) DEFAULT '0.00',
+  `housingFund` double(12,2) DEFAULT '0.00',
+  `lastYearDeposit` double(12,2) DEFAULT '0.00',
+  `modelHouseReceivable` double(12,2) DEFAULT '0.00',
+  `mileReceivable` double(12,2) DEFAULT '0.00',
+  `xingyuReceivable` double(12,2) DEFAULT '0.00',
+  `huanyingReceivable` double(12,2) DEFAULT '0.00',
+  `wanmeiReceivable` double(12,2) DEFAULT '0.00',
+  `weiliReceivable` double(12,2) DEFAULT '0.00',
+  `remark` varchar(200) DEFAULT NULL,
+  `snapshotTime` datetime DEFAULT NULL,
+  `createdTime` datetime DEFAULT NULL,
+  `updatedTime` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_asset_history_month` (`month`) USING BTREE,
+  KEY `idx_asset_history_source` (`sourceAssetId`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='asset snapshot history';
+
 INSERT IGNORE INTO `t_shop_asset_config` (`configKey`, `configValue`, `remark`, `updatedTime`)
 VALUES ('assetEstimateRate', 0.4, '预估存款系数', NOW());

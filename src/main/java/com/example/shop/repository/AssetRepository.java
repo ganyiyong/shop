@@ -33,6 +33,17 @@ public class AssetRepository {
                 "LIMIT 12 ", RowMappers.ASSET);
     }
 
+    public List<AssetSnapshot> historyByMonth(String month) {
+        return jdbcTemplate.query("SELECT * " +
+                "FROM t_shop_asset_snapshot_history " +
+                "WHERE month=? " +
+                "ORDER BY snapshotTime DESC, id DESC ", RowMappers.ASSET, month);
+    }
+
+    public void deleteHistory(int id) {
+        jdbcTemplate.update("DELETE FROM t_shop_asset_snapshot_history WHERE id=?", id);
+    }
+
     public void save(AssetSnapshot asset) {
         AssetSnapshot existing = findByMonth(asset.getMonth());
         if (existing.getId() == null) {
@@ -52,6 +63,18 @@ public class AssetRepository {
                     n(asset.getHuanyingReceivable()), n(asset.getWanmeiReceivable()), n(asset.getWeiliReceivable()), asset.getRemark(),
                     LocalDateTime.now(), defaultMonth(asset.getMonth()));
         }
+    }
+
+    public void saveHistory(AssetSnapshot asset) {
+        AssetSnapshot existing = findByMonth(asset.getMonth());
+        asset.setSourceAssetId(existing.getId());
+        jdbcTemplate.update("INSERT INTO t_shop_asset_snapshot_history(sourceAssetId,month,purchaseAmount,cashDeposit,cmbCreditLoan,gzCreditLoan,huabeiLoan,otherLoan,lentOut,guaranteeDeposit,housingFund,lastYearDeposit,modelHouseReceivable,mileReceivable,xingyuReceivable,huanyingReceivable,wanmeiReceivable,weiliReceivable,remark,snapshotTime,createdTime,updatedTime) " +
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ",
+            asset.getSourceAssetId(), defaultMonth(asset.getMonth()), n(asset.getPurchaseAmount()), n(asset.getCashDeposit()), n(asset.getCmbCreditLoan()), n(asset.getGzCreditLoan()),
+            n(asset.getHuabeiLoan()), n(asset.getOtherLoan()), n(asset.getLentOut()), n(asset.getGuaranteeDeposit()), n(asset.getHousingFund()),
+            n(asset.getLastYearDeposit()), n(asset.getModelHouseReceivable()), n(asset.getMileReceivable()), n(asset.getXingyuReceivable()),
+            n(asset.getHuanyingReceivable()), n(asset.getWanmeiReceivable()), n(asset.getWeiliReceivable()), asset.getRemark(),
+            LocalDateTime.now(), existing.getCreatedTime(), existing.getUpdatedTime());
     }
 
     public double stockPurchaseAmount() {

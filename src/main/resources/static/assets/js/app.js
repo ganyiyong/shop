@@ -396,6 +396,51 @@
     });
   }
 
+  function setupAssetSnapshotSave() {
+    var button = document.querySelector('[data-asset-snapshot-save]');
+    if (!button || !window.fetch) return;
+    var form = button.closest('form');
+    var status = form && form.querySelector('[data-asset-snapshot-status]');
+    if (!form) return;
+    var defaultText = button.textContent;
+
+    function showStatus(message, isError) {
+      if (!status) return;
+      status.hidden = false;
+      status.textContent = message;
+      status.classList.toggle('error', !!isError);
+    }
+
+    button.addEventListener('click', function () {
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      var url = button.dataset.url || form.action;
+      button.disabled = true;
+      button.classList.add('is-loading');
+      button.textContent = '保存中';
+      if (status) status.hidden = true;
+
+      fetch(url, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      }).then(function (response) {
+        if (!response.ok) throw new Error('request failed');
+        return response.json();
+      }).then(function (data) {
+        showStatus(data.message || '快照保存成功', false);
+      }).catch(function () {
+        showStatus('快照保存失败，请稍后重试', true);
+      }).finally(function () {
+        button.disabled = false;
+        button.classList.remove('is-loading');
+        button.textContent = defaultText;
+      });
+    });
+  }
+
   function setupDashboardCharts() {
     function money(value) {
       var number = Number(value || 0);
@@ -642,6 +687,7 @@
   setupSalePlatform();
   setupStockPicker();
   setupMonthPicker();
+  setupAssetSnapshotSave();
   setupDashboardCharts();
   setupLoginRemember();
 })();

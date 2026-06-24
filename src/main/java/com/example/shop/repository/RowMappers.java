@@ -102,6 +102,8 @@ final class RowMappers {
         item.setWanmeiReceivable(rs.getDouble("wanmeiReceivable"));
         item.setWeiliReceivable(rs.getDouble("weiliReceivable"));
         item.setRemark(rs.getString("remark"));
+        try { item.setSourceAssetId(rs.getInt("sourceAssetId")); } catch (Exception ignored) { }
+        try { item.setSnapshotTime(time(rs.getTimestamp("snapshotTime"))); } catch (Exception ignored) { }
         item.setCreatedTime(time(rs.getTimestamp("createdTime")));
         item.setUpdatedTime(time(rs.getTimestamp("updatedTime")));
         return item;

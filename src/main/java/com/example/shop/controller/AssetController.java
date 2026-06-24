@@ -8,8 +8,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.time.YearMonth;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 public class AssetController {
@@ -80,6 +84,51 @@ public class AssetController {
         return "redirect:/assets?month=" + selectedMonth;
     }
 
+    @PostMapping("/assets/snapshot/save")
+    @ResponseBody
+    public Map<String, Object> saveSnapshot(@ModelAttribute AssetSnapshot asset) {
+        YearMonth selectedMonth = parseMonth(asset.getMonth());
+        asset.setMonth(selectedMonth.toString());
+        if (asset.getPurchaseAmount() == null || asset.getPurchaseAmount() <= 0) {
+            asset.setPurchaseAmount(assetRepository.stockPurchaseAmount());
+        }
+        assetRepository.saveHistory(asset);
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("month", selectedMonth.toString());
+        result.put("message", "快照保存成功");
+        return result;
+    }
+
+    @GetMapping("/assets/snapshots")
+    public String snapshots(@RequestParam(required = false) String month, Model model) {
+        YearMonth selectedMonth = parseMonth(month);
+        AssetSnapshot currentAsset = assetRepository.findByMonth(selectedMonth.toString());
+        double currentPurchaseAmount = assetRepository.stockPurchaseAmount();
+        if (currentAsset.getId() == null || currentAsset.getPurchaseAmount() == null || currentAsset.getPurchaseAmount() <= 0) {
+            currentAsset.setPurchaseAmount(currentPurchaseAmount);
+        }
+        double estimateRate = assetRepository.estimateRate();
+        double previousActualDeposit = previousActualDeposit(selectedMonth.minusMonths(1), currentPurchaseAmount);
+        enrichAssetMetrics(currentAsset, estimateRate, previousActualDeposit);
+        List<AssetSnapshot> snapshots = assetRepository.historyByMonth(selectedMonth.toString());
+        for (AssetSnapshot snapshot : snapshots) {
+            enrichAssetMetrics(snapshot, estimateRate, previousActualDeposit);
+        }
+        model.addAttribute("active", "assets");
+        model.addAttribute("month", selectedMonth);
+        model.addAttribute("currentAsset", currentAsset);
+        model.addAttribute("snapshots", snapshots);
+        return "asset-snapshots";
+    }
+
+    @PostMapping("/assets/snapshot/delete")
+    public String deleteSnapshot(@RequestParam int id, @RequestParam(required = false) String month) {
+        YearMonth selectedMonth = parseMonth(month);
+        assetRepository.deleteHistory(id);
+        return "redirect:/assets/snapshots?month=" + selectedMonth;
+    }
+
     private YearMonth parseMonth(String value) {
         try {
             return value == null || value.trim().isEmpty() ? YearMonth.now() : YearMonth.parse(value);
@@ -90,6 +139,16 @@ public class AssetController {
 
     private double n(Double value) {
         return value == null ? 0D : value;
+    }
+
+    private void enrichAssetMetrics(AssetSnapshot asset, double estimateRate, double previousActualDeposit) {
+        double purchaseAmount = n(asset.getPurchaseAmount());
+        double actualDeposit = n(asset.getCashDeposit()) + assetRepository.receivableTotal(asset)
+            + purchaseAmount + assetRepository.assetItemTotal(asset) - assetRepository.loanTotal(asset);
+        asset.setActualDeposit(actualDeposit);
+        asset.setMonthDeposit(actualDeposit - previousActualDeposit);
+        asset.setEstimatedDeposit(actualDeposit + purchaseAmount * estimateRate);
+        asset.setYearlyProfit(actualDeposit - n(asset.getLastYearDeposit()));
     }
 
     private double previousActualDeposit(YearMonth month, double currentPurchaseAmount) {

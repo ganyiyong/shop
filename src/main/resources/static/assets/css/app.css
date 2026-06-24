@@ -966,6 +966,22 @@ textarea:focus {
   background: #0f8f5c;
 }
 
+.btn.is-loading {
+  pointer-events: none;
+  opacity: 0.82;
+}
+
+.btn.is-loading::before {
+  width: 14px;
+  height: 14px;
+  margin-right: 7px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  content: "";
+  animation: spin 0.72s linear infinite;
+}
+
 .btn.danger {
   border-color: rgba(220, 53, 69, 0.18);
   color: var(--red);
@@ -1047,6 +1063,27 @@ textarea:focus {
   align-items: end;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.form-feedback {
+  padding: 10px 12px;
+  border: 1px solid rgba(18, 166, 106, 0.20);
+  border-radius: 8px;
+  color: #047857;
+  background: #ecfdf5;
+  font-size: 13px;
+}
+
+.form-feedback.error {
+  border-color: rgba(220, 53, 69, 0.20);
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .table-wrap {
@@ -1469,11 +1506,6 @@ td small {
 .cash-amount-green {
   --tw-text-opacity: 1;
   color: rgb(22 163 74 / var(--tw-text-opacity, 1));
-}
-
-.cash-amount-green-2 {
-  --tw-text-opacity: 1;
-  color: rgb(14 227 93 / var(--tw-text-opacity, 1));
 }
 
 .text-bad {

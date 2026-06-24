@@ -89,6 +89,33 @@ public class DatabaseInitializer {
                 "  UNIQUE KEY uk_asset_month(month) " +
                 ") ");
         addColumnIfMissing("t_shop_asset_snapshot", "purchaseAmount", "decimal(12,2) DEFAULT 0");
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS t_shop_asset_snapshot_history ( " +
+                "  id int AUTO_INCREMENT PRIMARY KEY, " +
+                "  sourceAssetId int, " +
+                "  month varchar(7) NOT NULL, " +
+                "  purchaseAmount decimal(12,2) DEFAULT 0, " +
+                "  cashDeposit decimal(12,2) DEFAULT 0, " +
+                "  cmbCreditLoan decimal(12,2) DEFAULT 0, " +
+                "  gzCreditLoan decimal(12,2) DEFAULT 0, " +
+                "  huabeiLoan decimal(12,2) DEFAULT 0, " +
+                "  otherLoan decimal(12,2) DEFAULT 0, " +
+                "  lentOut decimal(12,2) DEFAULT 0, " +
+                "  guaranteeDeposit decimal(12,2) DEFAULT 0, " +
+                "  housingFund decimal(12,2) DEFAULT 0, " +
+                "  lastYearDeposit decimal(12,2) DEFAULT 0, " +
+                "  modelHouseReceivable decimal(12,2) DEFAULT 0, " +
+                "  mileReceivable decimal(12,2) DEFAULT 0, " +
+                "  xingyuReceivable decimal(12,2) DEFAULT 0, " +
+                "  huanyingReceivable decimal(12,2) DEFAULT 0, " +
+                "  wanmeiReceivable decimal(12,2) DEFAULT 0, " +
+                "  weiliReceivable decimal(12,2) DEFAULT 0, " +
+                "  remark varchar(200), " +
+                "  snapshotTime datetime, " +
+                "  createdTime datetime, " +
+                "  updatedTime datetime, " +
+                "  KEY idx_asset_history_month(month), " +
+                "  KEY idx_asset_history_source(sourceAssetId) " +
+                ") ");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS t_shop_asset_config ( " +
                 "  id int AUTO_INCREMENT PRIMARY KEY, " +
                 "  configKey varchar(50) NOT NULL, " +
