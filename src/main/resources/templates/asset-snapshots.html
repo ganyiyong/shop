@@ -7,7 +7,7 @@
         <button class="asset-filter-toggle" type="button" data-mobile-collapse-toggle aria-expanded="false">
             <span>
                 <b>筛选条件</b>
-                <small th:text="${#temporals.format(month.atDay(1), 'yyyy年 M月')} + ' · 点击展开'">2026年 5月 · 点击展开</small>
+                <small th:text="${#temporals.format(month.atDay(1), 'yyyy年 M月') + ' · 点击展开'}">2026年 5月 · 点击展开</small>
             </span>
             <i aria-hidden="true"></i>
         </button>
@@ -19,10 +19,11 @@
                     </button>
                 </label>
                 <input type="hidden" name="month" th:value="${month}" data-month-value>
+                <input type="hidden" name="compareMonth" th:value="${compareMonth}">
                 <button class="btn" type="submit">筛选</button>
             </form>
             <div class="toolbar-actions">
-                <a class="btn" th:href="@{/assets(month=${month})}">返回资产</a>
+                <a class="btn" th:href="@{/assets(month=${month}, compareMonth=${compareMonth})}">返回资产</a>
             </div>
         </div>
     </section>
@@ -82,6 +83,7 @@
                         <form method="post" th:action="@{/assets/snapshot/delete}" onsubmit="return confirm('确认删除该历史快照？')">
                             <input type="hidden" name="id" th:value="${s.id}">
                             <input type="hidden" name="month" th:value="${month}">
+                            <input type="hidden" name="compareMonth" th:value="${compareMonth}">
                             <button class="btn danger small" type="submit">删除</button>
                         </form>
                     </td>

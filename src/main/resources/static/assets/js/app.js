@@ -341,58 +341,101 @@
   }
 
   function setupMonthPicker() {
-    var trigger = document.querySelector('[data-month-picker]');
+    var triggers = document.querySelectorAll('[data-month-picker]');
     var popover = document.querySelector('[data-month-popover]');
-    if (!trigger || !popover) return;
-    var form = trigger.closest('form');
-    var valueInput = form.querySelector('[data-month-value]');
-    var label = form.querySelector('[data-month-label]');
+    if (!triggers.length || !popover) return;
     var title = popover.querySelector('[data-month-title]');
     var grid = popover.querySelector('[data-month-grid]');
-    var selected = valueInput.value || fmt(new Date()).slice(0, 7);
-    var year = Number(selected.slice(0, 4)) || new Date().getFullYear();
+    var active = null;
+    function readActive(trigger) {
+      var form = trigger.closest('form');
+      if (!form) return null;
+      var key = trigger.getAttribute('data-month-picker') || 'month';
+      var valueInput = form.querySelector('[data-month-value="' + key + '"]') || form.querySelector('[data-month-value]');
+      var label = trigger.querySelector('[data-month-label]') || form.querySelector('[data-month-label="' + key + '"]') || form.querySelector('[data-month-label]');
+      if (!valueInput) return null;
+      var selected = valueInput.value || fmt(new Date()).slice(0, 7);
+      return {
+        key: key,
+        trigger: trigger,
+        form: form,
+        valueInput: valueInput,
+        label: label,
+        selected: selected,
+        originalSelected: selected,
+        year: Number(selected.slice(0, 4)) || new Date().getFullYear()
+      };
+    }
+    function monthLabel(value) {
+      return Number(value.slice(0, 4)) + '年 ' + Number(value.slice(5, 7)) + '月';
+    }
+    function previousMonthValue(value) {
+      var parts = (value || '').split('-').map(Number);
+      var date = parts.length === 2 ? new Date(parts[0], parts[1] - 2, 1) : new Date();
+      return date.getFullYear() + '-' + pad(date.getMonth() + 1);
+    }
     function renderMonth() {
-      title.textContent = year + '年';
+      if (!active) return;
+      title.textContent = active.year + '年';
       var html = '';
       for (var i = 1; i <= 12; i++) {
-        var value = year + '-' + pad(i);
-        html += '<button type="button" class="' + (value === selected ? 'selected' : '') + '" data-month-option="' + value + '">' + i + '月</button>';
+        var value = active.year + '-' + pad(i);
+        html += '<button type="button" class="' + (value === active.selected ? 'selected' : '') + '" data-month-option="' + value + '">' + i + '月</button>';
       }
       grid.innerHTML = html;
-      valueInput.value = selected;
-      label.textContent = Number(selected.slice(0, 4)) + '年 ' + Number(selected.slice(5, 7)) + '月';
+      active.valueInput.value = active.selected;
+      if (active.label) active.label.textContent = monthLabel(active.selected);
     }
     function submitMonth() {
-      valueInput.value = selected;
+      if (!active) return;
+      active.valueInput.value = active.selected;
+      if (active.key === 'month') {
+        var compareInput = active.form.querySelector('[data-month-value="compareMonth"]');
+        var previousDefault = previousMonthValue(active.originalSelected);
+        if (compareInput && (!compareInput.value || compareInput.value === previousDefault)) {
+          compareInput.value = previousMonthValue(active.selected);
+        }
+      }
       popover.classList.remove('open');
-      form.submit();
+      active.form.submit();
     }
-    trigger.addEventListener('click', function () {
-      var rect = trigger.getBoundingClientRect();
-      popover.style.left = Math.max(12, rect.left + window.scrollX) + 'px';
-      popover.style.top = rect.bottom + window.scrollY + 8 + 'px';
-      popover.classList.toggle('open');
-      renderMonth();
+    triggers.forEach(function (trigger) {
+      trigger.addEventListener('click', function () {
+        var nextActive = readActive(trigger);
+        if (!nextActive) return;
+        var wasOpen = popover.classList.contains('open') && active && active.trigger === trigger;
+        active = nextActive;
+        if (wasOpen) {
+          popover.classList.remove('open');
+          return;
+        }
+        var rect = trigger.getBoundingClientRect();
+        popover.style.left = Math.max(12, rect.left + window.scrollX) + 'px';
+        popover.style.top = rect.bottom + window.scrollY + 8 + 'px';
+        popover.classList.add('open');
+        renderMonth();
+      });
     });
     popover.addEventListener('click', function (event) {
+      if (!active) return;
       var option = event.target.closest('[data-month-option]');
       if (option) {
-        selected = option.dataset.monthOption;
-        year = Number(selected.slice(0, 4));
+        active.selected = option.dataset.monthOption;
+        active.year = Number(active.selected.slice(0, 4));
         renderMonth();
         submitMonth();
       }
-      if (event.target.matches('[data-month-prev]')) { year -= 1; renderMonth(); }
-      if (event.target.matches('[data-month-next]')) { year += 1; renderMonth(); }
+      if (event.target.matches('[data-month-prev]')) { active.year -= 1; renderMonth(); }
+      if (event.target.matches('[data-month-next]')) { active.year += 1; renderMonth(); }
       if (event.target.matches('[data-month-now]')) {
-        selected = fmt(new Date()).slice(0, 7);
-        year = Number(selected.slice(0, 4));
+        active.selected = fmt(new Date()).slice(0, 7);
+        active.year = Number(active.selected.slice(0, 4));
         submitMonth();
       }
       if (event.target.matches('[data-month-apply]')) submitMonth();
     });
     document.addEventListener('click', function (event) {
-      if (!popover.contains(event.target) && !trigger.contains(event.target)) popover.classList.remove('open');
+      if (!popover.contains(event.target) && !event.target.closest('[data-month-picker]')) popover.classList.remove('open');
     });
   }
 

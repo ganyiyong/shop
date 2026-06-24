@@ -24,64 +24,66 @@ public class AssetController {
     }
 
     @GetMapping("/assets")
-    public String assets(@RequestParam(required = false) String month, Model model) {
+    public String assets(@RequestParam(required = false) String month,
+                         @RequestParam(required = false) String compareMonth,
+                         Model model) {
         YearMonth selectedMonth = parseMonth(month);
+        YearMonth selectedCompareMonth = parseMonthOrDefault(compareMonth, selectedMonth.minusMonths(1));
         AssetSnapshot asset = assetRepository.findByMonth(selectedMonth.toString());
         double currentPurchaseAmount = assetRepository.stockPurchaseAmount();
-        double purchaseAmount = asset.getId() == null || asset.getPurchaseAmount() == null || asset.getPurchaseAmount() <= 0
-            ? currentPurchaseAmount
-            : n(asset.getPurchaseAmount());
-        asset.setPurchaseAmount(purchaseAmount);
         double estimateRate = assetRepository.estimateRate();
-        double receivableTotal = assetRepository.receivableTotal(asset);
-        double loanTotal = assetRepository.loanTotal(asset);
-        double assetItemTotal = assetRepository.assetItemTotal(asset);
-        double actualDeposit = n(asset.getCashDeposit()) + receivableTotal + purchaseAmount + assetItemTotal - loanTotal;
-        double estimatedDeposit = actualDeposit + purchaseAmount * estimateRate;
-        double estimatedNetAsset = estimatedDeposit;
-        Double lastYearAutoDeposit = assetRepository.actualDepositOfMonth(selectedMonth.minusYears(1).withMonth(12).toString());
-        double lastYearDeposit = lastYearAutoDeposit == null ? n(asset.getLastYearDeposit()) : lastYearAutoDeposit;
-        asset.setLastYearDeposit(lastYearDeposit);
-        double yearlyProfit = actualDeposit - lastYearDeposit;
-        double previousActualDeposit = previousActualDeposit(selectedMonth.minusMonths(1), currentPurchaseAmount);
-        double monthDeposit = actualDeposit - previousActualDeposit;
+        AssetMetrics metrics = calculateMetrics(asset, selectedMonth, estimateRate, currentPurchaseAmount);
+        AssetSnapshot compareAsset = assetRepository.findByMonth(selectedCompareMonth.toString());
+        boolean compareAssetExists = compareAsset.getId() != null;
+        AssetMetrics compareMetrics = null;
+        if (compareAssetExists) {
+            compareMetrics = calculateMetrics(compareAsset, selectedCompareMonth, estimateRate, currentPurchaseAmount);
+        }
 
         model.addAttribute("active", "assets");
         model.addAttribute("month", selectedMonth);
+        model.addAttribute("compareMonth", selectedCompareMonth);
         model.addAttribute("asset", asset);
+        model.addAttribute("compareAsset", compareAsset);
+        model.addAttribute("compareAssetExists", compareAssetExists);
+        model.addAttribute("compareDiff", compareAssetExists ? compareDiff(asset, metrics, compareAsset, compareMetrics) : new HashMap<String, Double>());
         model.addAttribute("estimateRate", estimateRate);
-        model.addAttribute("purchaseAmount", purchaseAmount);
+        model.addAttribute("purchaseAmount", metrics.purchaseAmount);
         model.addAttribute("currentPurchaseAmount", currentPurchaseAmount);
-        model.addAttribute("receivableTotal", receivableTotal);
-        model.addAttribute("loanTotal", loanTotal);
-        model.addAttribute("assetItemTotal", assetItemTotal);
-        model.addAttribute("actualDeposit", actualDeposit);
-        model.addAttribute("estimatedDeposit", estimatedDeposit);
-        model.addAttribute("lastYearDeposit", lastYearDeposit);
-        model.addAttribute("lastYearAutoDeposit", lastYearAutoDeposit);
-        model.addAttribute("estimatedNetAsset", estimatedNetAsset);
-        model.addAttribute("yearlyProfit", yearlyProfit);
-        model.addAttribute("monthDeposit", monthDeposit);
+        model.addAttribute("receivableTotal", metrics.receivableTotal);
+        model.addAttribute("loanTotal", metrics.loanTotal);
+        model.addAttribute("assetItemTotal", metrics.assetItemTotal);
+        model.addAttribute("actualDeposit", metrics.actualDeposit);
+        model.addAttribute("estimatedDeposit", metrics.estimatedDeposit);
+        model.addAttribute("lastYearDeposit", metrics.lastYearDeposit);
+        model.addAttribute("lastYearAutoDeposit", metrics.lastYearAutoDeposit);
+        model.addAttribute("estimatedNetAsset", metrics.estimatedDeposit);
+        model.addAttribute("yearlyProfit", metrics.yearlyProfit);
+        model.addAttribute("monthDeposit", metrics.monthDeposit);
         return "assets";
     }
 
     @PostMapping("/assets/rate/save")
     public String saveRate(@RequestParam(required = false) String month,
+                           @RequestParam(required = false) String compareMonth,
                            @RequestParam Double estimateRate) {
         YearMonth selectedMonth = parseMonth(month);
+        YearMonth selectedCompareMonth = parseMonthOrDefault(compareMonth, selectedMonth.minusMonths(1));
         assetRepository.saveEstimateRate(estimateRate);
-        return "redirect:/assets?month=" + selectedMonth;
+        return redirectToAssets(selectedMonth, selectedCompareMonth);
     }
 
     @PostMapping("/assets/save")
-    public String save(@ModelAttribute AssetSnapshot asset) {
+    public String save(@ModelAttribute AssetSnapshot asset,
+                       @RequestParam(required = false) String compareMonth) {
         YearMonth selectedMonth = parseMonth(asset.getMonth());
+        YearMonth selectedCompareMonth = parseMonthOrDefault(compareMonth, selectedMonth.minusMonths(1));
         asset.setMonth(selectedMonth.toString());
         if (asset.getPurchaseAmount() == null || asset.getPurchaseAmount() <= 0) {
             asset.setPurchaseAmount(assetRepository.stockPurchaseAmount());
         }
         assetRepository.save(asset);
-        return "redirect:/assets?month=" + selectedMonth;
+        return redirectToAssets(selectedMonth, selectedCompareMonth);
     }
 
     @PostMapping("/assets/snapshot/save")
@@ -101,39 +103,46 @@ public class AssetController {
     }
 
     @GetMapping("/assets/snapshots")
-    public String snapshots(@RequestParam(required = false) String month, Model model) {
+    public String snapshots(@RequestParam(required = false) String month,
+                            @RequestParam(required = false) String compareMonth,
+                            Model model) {
         YearMonth selectedMonth = parseMonth(month);
+        YearMonth selectedCompareMonth = parseMonthOrDefault(compareMonth, selectedMonth.minusMonths(1));
         AssetSnapshot currentAsset = assetRepository.findByMonth(selectedMonth.toString());
         double currentPurchaseAmount = assetRepository.stockPurchaseAmount();
-        if (currentAsset.getId() == null || currentAsset.getPurchaseAmount() == null || currentAsset.getPurchaseAmount() <= 0) {
-            currentAsset.setPurchaseAmount(currentPurchaseAmount);
-        }
         double estimateRate = assetRepository.estimateRate();
-        double previousActualDeposit = previousActualDeposit(selectedMonth.minusMonths(1), currentPurchaseAmount);
-        enrichAssetMetrics(currentAsset, estimateRate, previousActualDeposit);
+        calculateMetrics(currentAsset, selectedMonth, estimateRate, currentPurchaseAmount);
         List<AssetSnapshot> snapshots = assetRepository.historyByMonth(selectedMonth.toString());
         for (AssetSnapshot snapshot : snapshots) {
-            enrichAssetMetrics(snapshot, estimateRate, previousActualDeposit);
+            calculateMetrics(snapshot, selectedMonth, estimateRate, currentPurchaseAmount);
         }
         model.addAttribute("active", "assets");
         model.addAttribute("month", selectedMonth);
+        model.addAttribute("compareMonth", selectedCompareMonth);
         model.addAttribute("currentAsset", currentAsset);
         model.addAttribute("snapshots", snapshots);
         return "asset-snapshots";
     }
 
     @PostMapping("/assets/snapshot/delete")
-    public String deleteSnapshot(@RequestParam int id, @RequestParam(required = false) String month) {
+    public String deleteSnapshot(@RequestParam int id,
+                                 @RequestParam(required = false) String month,
+                                 @RequestParam(required = false) String compareMonth) {
         YearMonth selectedMonth = parseMonth(month);
+        YearMonth selectedCompareMonth = parseMonthOrDefault(compareMonth, selectedMonth.minusMonths(1));
         assetRepository.deleteHistory(id);
-        return "redirect:/assets/snapshots?month=" + selectedMonth;
+        return "redirect:/assets/snapshots?month=" + selectedMonth + "&compareMonth=" + selectedCompareMonth;
     }
 
     private YearMonth parseMonth(String value) {
+        return parseMonthOrDefault(value, YearMonth.now());
+    }
+
+    private YearMonth parseMonthOrDefault(String value, YearMonth fallback) {
         try {
-            return value == null || value.trim().isEmpty() ? YearMonth.now() : YearMonth.parse(value);
+            return value == null || value.trim().isEmpty() ? fallback : YearMonth.parse(value);
         } catch (Exception ignored) {
-            return YearMonth.now();
+            return fallback;
         }
     }
 
@@ -141,26 +150,81 @@ public class AssetController {
         return value == null ? 0D : value;
     }
 
-    private void enrichAssetMetrics(AssetSnapshot asset, double estimateRate, double previousActualDeposit) {
+    private AssetMetrics calculateMetrics(AssetSnapshot asset, YearMonth month, double estimateRate, double currentPurchaseAmount) {
+        applyPurchaseAmount(asset, currentPurchaseAmount);
         double purchaseAmount = n(asset.getPurchaseAmount());
-        double actualDeposit = n(asset.getCashDeposit()) + assetRepository.receivableTotal(asset)
-            + purchaseAmount + assetRepository.assetItemTotal(asset) - assetRepository.loanTotal(asset);
-        asset.setActualDeposit(actualDeposit);
-        asset.setMonthDeposit(actualDeposit - previousActualDeposit);
-        asset.setEstimatedDeposit(actualDeposit + purchaseAmount * estimateRate);
-        asset.setYearlyProfit(actualDeposit - n(asset.getLastYearDeposit()));
+        double receivableTotal = assetRepository.receivableTotal(asset);
+        double loanTotal = assetRepository.loanTotal(asset);
+        double assetItemTotal = assetRepository.assetItemTotal(asset);
+        double actualDeposit = n(asset.getCashDeposit()) + receivableTotal + purchaseAmount + assetItemTotal - loanTotal;
+        double estimatedDeposit = actualDeposit + purchaseAmount * estimateRate;
+        Double lastYearAutoDeposit = actualDepositOfMonth(month.minusYears(1).withMonth(12), currentPurchaseAmount);
+        double lastYearDeposit = lastYearAutoDeposit == null ? n(asset.getLastYearDeposit()) : lastYearAutoDeposit;
+        double previousActualDeposit = n(actualDepositOfMonth(month.minusMonths(1), currentPurchaseAmount));
+
+        AssetMetrics metrics = new AssetMetrics();
+        metrics.purchaseAmount = purchaseAmount;
+        metrics.receivableTotal = receivableTotal;
+        metrics.loanTotal = loanTotal;
+        metrics.assetItemTotal = assetItemTotal;
+        metrics.actualDeposit = actualDeposit;
+        metrics.estimatedDeposit = estimatedDeposit;
+        metrics.lastYearAutoDeposit = lastYearAutoDeposit;
+        metrics.lastYearDeposit = lastYearDeposit;
+        metrics.yearlyProfit = actualDeposit - lastYearDeposit;
+        metrics.monthDeposit = actualDeposit - previousActualDeposit;
+
+        asset.setLastYearDeposit(lastYearDeposit);
+        asset.setActualDeposit(metrics.actualDeposit);
+        asset.setMonthDeposit(metrics.monthDeposit);
+        asset.setEstimatedDeposit(metrics.estimatedDeposit);
+        asset.setYearlyProfit(metrics.yearlyProfit);
+        return metrics;
     }
 
-    private double previousActualDeposit(YearMonth month, double currentPurchaseAmount) {
+    private Double actualDepositOfMonth(YearMonth month, double currentPurchaseAmount) {
         AssetSnapshot asset = assetRepository.findByMonth(month.toString());
         if (asset.getId() == null) {
-            return 0D;
+            return null;
         }
-        double purchaseAmount = asset.getPurchaseAmount() == null || asset.getPurchaseAmount() <= 0
+        applyPurchaseAmount(asset, currentPurchaseAmount);
+        return n(asset.getCashDeposit()) + assetRepository.receivableTotal(asset)
+            + n(asset.getPurchaseAmount()) + assetRepository.assetItemTotal(asset) - assetRepository.loanTotal(asset);
+    }
+
+    private void applyPurchaseAmount(AssetSnapshot asset, double currentPurchaseAmount) {
+        double purchaseAmount = asset.getId() == null || asset.getPurchaseAmount() == null || asset.getPurchaseAmount() <= 0
             ? currentPurchaseAmount
             : n(asset.getPurchaseAmount());
-        double actualDeposit = n(asset.getCashDeposit()) + assetRepository.receivableTotal(asset)
-            + purchaseAmount + assetRepository.assetItemTotal(asset) - assetRepository.loanTotal(asset);
-        return actualDeposit;
+        asset.setPurchaseAmount(purchaseAmount);
+    }
+
+    private String redirectToAssets(YearMonth selectedMonth, YearMonth compareMonth) {
+        return "redirect:/assets?month=" + selectedMonth + "&compareMonth=" + compareMonth;
+    }
+
+    private Map<String, Double> compareDiff(AssetSnapshot asset, AssetMetrics metrics, AssetSnapshot compareAsset, AssetMetrics compareMetrics) {
+        Map<String, Double> diff = new HashMap<>();
+        diff.put("cashDeposit", n(asset.getCashDeposit()) - n(compareAsset.getCashDeposit()));
+        diff.put("purchaseAmount", metrics.purchaseAmount - compareMetrics.purchaseAmount);
+        diff.put("receivableTotal", metrics.receivableTotal - compareMetrics.receivableTotal);
+        diff.put("loanTotal", metrics.loanTotal - compareMetrics.loanTotal);
+        diff.put("actualDeposit", metrics.actualDeposit - compareMetrics.actualDeposit);
+        diff.put("estimatedDeposit", metrics.estimatedDeposit - compareMetrics.estimatedDeposit);
+        diff.put("yearlyProfit", metrics.yearlyProfit - compareMetrics.yearlyProfit);
+        return diff;
+    }
+
+    private static class AssetMetrics {
+        private double purchaseAmount;
+        private double receivableTotal;
+        private double loanTotal;
+        private double assetItemTotal;
+        private double actualDeposit;
+        private double estimatedDeposit;
+        private Double lastYearAutoDeposit;
+        private double lastYearDeposit;
+        private double yearlyProfit;
+        private double monthDeposit;
     }
 }
