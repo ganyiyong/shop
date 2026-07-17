@@ -55,7 +55,7 @@
             </div>
         </div>
         <div class="table-wrap">
-            <table>
+            <table class="responsive-table data-table table-asset-snapshots">
                 <thead>
                 <tr>
                     <th>快照时间</th>
@@ -71,15 +71,15 @@
                 </thead>
                 <tbody>
                 <tr th:each="s : ${snapshots}">
-                    <td th:text="${s.snapshotTime == null ? '-' : #temporals.format(s.snapshotTime, 'yyyy-MM-dd HH:mm')}">-</td>
-                    <td class="cash-amount-green" th:text="${@money.format(s.cashDeposit)}">￥0.00</td>
-                    <td class="cash-amount-green" th:text="${@money.format(s.monthDeposit)}">￥0.00</td>
-                    <td th:text="${@money.format(s.purchaseAmount)}">￥0.00</td>
-                    <td th:text="${@money.format(s.receivableTotal)}">￥0.00</td>
-                    <td th:text="${@money.format(s.actualDeposit)}">￥0.00</td>
-                    <td th:text="${@money.format(s.estimatedDeposit)}">￥0.00</td>
-                    <td th:text="${@money.format(s.yearlyProfit)}">￥0.00</td>
-                    <td>
+                    <td class="table-primary" data-label="快照时间" th:text="${s.snapshotTime == null ? '-' : #temporals.format(s.snapshotTime, 'yyyy-MM-dd HH:mm')}">-</td>
+                    <td class="cash-amount-green" data-label="现金存款" th:text="${@money.format(s.cashDeposit)}">￥0.00</td>
+                    <td class="cash-amount-green" data-label="本月存款" th:text="${@money.format(s.monthDeposit)}">￥0.00</td>
+                    <td data-label="进货金额" th:text="${@money.format(s.purchaseAmount)}">￥0.00</td>
+                    <td data-label="待确认货款" th:text="${@money.format(s.receivableTotal)}">￥0.00</td>
+                    <td data-label="实际存款" th:text="${@money.format(s.actualDeposit)}">￥0.00</td>
+                    <td data-label="预估存款" th:text="${@money.format(s.estimatedDeposit)}">￥0.00</td>
+                    <td data-label="今年利润" th:text="${@money.format(s.yearlyProfit)}">￥0.00</td>
+                    <td class="table-actions" data-label="操作">
                         <form method="post" th:action="@{/assets/snapshot/delete}" onsubmit="return confirm('确认删除该历史快照？')">
                             <input type="hidden" name="id" th:value="${s.id}">
                             <input type="hidden" name="month" th:value="${month}">

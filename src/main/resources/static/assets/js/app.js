@@ -2,9 +2,23 @@
   function openModal(id, trigger) {
     var modal = document.getElementById(id);
     if (!modal) return;
+    modal._returnFocus = trigger || document.activeElement;
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    var heading = modal.querySelector('.modal-head h2');
+    if (heading) {
+      if (!heading.id) heading.id = id + 'Title';
+      modal.setAttribute('aria-labelledby', heading.id);
+    }
     var form = modal.querySelector('form');
     if (form) {
       form.reset();
+      var stockLabel = form.querySelector('[data-sale-stock-label]');
+      if (stockLabel) {
+        stockLabel.textContent = '未选择库存批次';
+        var stockControl = stockLabel.closest('.sale-stock-control');
+        if (stockControl) stockControl.classList.remove('has-value');
+      }
       form.querySelectorAll('input[checked]').forEach(function (input) { input.checked = true; });
       form.querySelectorAll('[data-field]').forEach(function (field) {
         var key = field.getAttribute('data-field');
@@ -18,6 +32,11 @@
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
+    window.setTimeout(function () {
+      var focusTarget = modal.querySelector('.search-select-button');
+      if (!focusTarget) focusTarget = modal.querySelector('input:not([type="hidden"]):not([aria-hidden="true"]),select:not([aria-hidden="true"]),textarea,button,[href]');
+      if (focusTarget) focusTarget.focus();
+    }, 0);
   }
   function closeModal(target) {
     var modal = target.closest('.modal');
@@ -25,7 +44,20 @@
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
     if (!document.querySelector('.modal.open')) document.body.classList.remove('modal-open');
+    if (modal._returnFocus && document.contains(modal._returnFocus)) modal._returnFocus.focus();
   }
+  document.querySelectorAll('.modal').forEach(function (modal) {
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    var heading = modal.querySelector('.modal-head h2');
+    if (heading) {
+      if (!heading.id) heading.id = (modal.id || 'modal') + 'Title';
+      modal.setAttribute('aria-labelledby', heading.id);
+    }
+    modal.querySelectorAll('.icon-btn[data-modal-close]').forEach(function (button) {
+      if (!button.getAttribute('aria-label')) button.setAttribute('aria-label', '关闭弹窗');
+    });
+  });
   document.querySelectorAll('[data-modal-open]').forEach(function (button) {
     button.addEventListener('click', function () { openModal(button.getAttribute('data-modal-open'), button); });
   });
@@ -56,14 +88,24 @@
       var button = combo.querySelector('[data-search-select-button]');
       var selected = select.options[select.selectedIndex];
       if (button) button.textContent = selected ? selected.textContent : '';
+      combo.classList.remove('invalid');
+      if (button) button.setAttribute('aria-invalid', 'false');
+      var validationError = combo.querySelector('.search-select-error');
+      if (validationError) validationError.hidden = true;
       combo.querySelectorAll('[data-search-select-option]').forEach(function (item) {
-        item.classList.toggle('selected', item.dataset.value === select.value);
+        var selected = item.dataset.value === select.value;
+        item.classList.toggle('selected', selected);
+        item.setAttribute('aria-selected', selected ? 'true' : 'false');
       });
     }
 
     function closeAll(except) {
       document.querySelectorAll('.search-select.open').forEach(function (combo) {
-        if (combo !== except) combo.classList.remove('open');
+        if (combo !== except) {
+          combo.classList.remove('open');
+          var comboButton = combo.querySelector('[data-search-select-button]');
+          if (comboButton) comboButton.setAttribute('aria-expanded', 'false');
+        }
       });
     }
 
@@ -90,8 +132,11 @@
       button.className = 'search-select-button';
       button.setAttribute('data-search-select-button', '');
       button.setAttribute('aria-haspopup', 'listbox');
+      button.setAttribute('aria-expanded', 'false');
       var panel = document.createElement('div');
       panel.className = 'search-select-panel';
+      panel.id = 'searchSelectPanel' + Math.random().toString(36).slice(2);
+      button.setAttribute('aria-controls', panel.id);
       var input = document.createElement('input');
       input.type = 'search';
       input.className = 'search-select-input';
@@ -103,6 +148,14 @@
       var empty = document.createElement('div');
       empty.className = 'search-select-empty';
       empty.textContent = '没有匹配的商品';
+      var validationError = document.createElement('small');
+      validationError.className = 'search-select-error';
+      validationError.id = panel.id + 'Error';
+      validationError.textContent = '请选择商品';
+      validationError.hidden = true;
+      validationError.setAttribute('role', 'alert');
+      button.setAttribute('aria-describedby', validationError.id);
+      if (select.required) button.setAttribute('aria-required', 'true');
 
       Array.prototype.slice.call(select.options).forEach(function (option) {
         var item = document.createElement('button');
@@ -117,6 +170,7 @@
           select.value = option.value;
           select.dispatchEvent(new Event('change', { bubbles: true }));
           combo.classList.remove('open');
+          button.setAttribute('aria-expanded', 'false');
           refresh(select);
         });
         list.appendChild(item);
@@ -127,8 +181,18 @@
       panel.appendChild(empty);
       combo.appendChild(button);
       combo.appendChild(panel);
+      combo.appendChild(validationError);
       select.insertAdjacentElement('afterend', combo);
       select.classList.add('native-search-select');
+      select.setAttribute('tabindex', '-1');
+      select.setAttribute('aria-hidden', 'true');
+      select.addEventListener('invalid', function (event) {
+        event.preventDefault();
+        combo.classList.add('invalid');
+        validationError.hidden = false;
+        button.setAttribute('aria-invalid', 'true');
+        button.focus();
+      });
 
       function filter() {
         var keyword = normalize(input.value);
@@ -145,6 +209,7 @@
         var open = !combo.classList.contains('open');
         closeAll(combo);
         combo.classList.toggle('open', open);
+        button.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (open) {
           input.value = '';
           filter();
@@ -154,7 +219,11 @@
       });
       input.addEventListener('input', filter);
       input.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') combo.classList.remove('open');
+        if (event.key === 'Escape') {
+          combo.classList.remove('open');
+          button.setAttribute('aria-expanded', 'false');
+          button.focus();
+        }
         if (event.key === 'Enter') {
           var first = list.querySelector('[data-search-select-option]:not([hidden])');
           if (first) {
@@ -181,15 +250,103 @@
       if (viewInput) viewInput.value = button.dataset.salesViewSubmit || 'detail';
     });
   });
-  function closeMobileMenu() {
-    document.body.classList.remove('drawer-open');
+  var accountMenu = document.querySelector('[data-account-menu]');
+  var accountTrigger = accountMenu && accountMenu.querySelector('[data-account-trigger]');
+  var accountDropdown = accountMenu && accountMenu.querySelector('[data-account-dropdown]');
+
+  function setAccountMenuOpen(open, restoreFocus) {
+    if (!accountMenu || !accountTrigger || !accountDropdown) return;
+    accountMenu.classList.toggle('open', open);
+    accountTrigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    accountDropdown.hidden = !open;
+    if (!open && restoreFocus) accountTrigger.focus();
   }
+
+  if (accountTrigger && accountDropdown) {
+    accountTrigger.addEventListener('click', function () {
+      setAccountMenuOpen(!accountMenu.classList.contains('open'), false);
+    });
+    document.addEventListener('click', function (event) {
+      if (!accountMenu.contains(event.target)) setAccountMenuOpen(false, false);
+    });
+  }
+
+  var sidebarCollapseButton = document.querySelector('[data-sidebar-collapse]');
+  var sidebarCollapseLabel = sidebarCollapseButton && sidebarCollapseButton.querySelector('[data-sidebar-collapse-label]');
+
+  function syncSidebarCollapseButton() {
+    if (!sidebarCollapseButton) return;
+    var collapsed = document.documentElement.classList.contains('sidebar-collapsed');
+    var label = collapsed ? '展开菜单' : '收起菜单';
+    sidebarCollapseButton.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    sidebarCollapseButton.setAttribute('aria-label', label);
+    sidebarCollapseButton.title = label;
+    if (sidebarCollapseLabel) sidebarCollapseLabel.textContent = label;
+  }
+
+  if (sidebarCollapseButton) {
+    sidebarCollapseButton.addEventListener('click', function () {
+      if (!window.matchMedia('(min-width: 901px)').matches) return;
+      var collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+      try {
+        localStorage.setItem('shop.sidebar.collapsed', collapsed ? 'true' : 'false');
+      } catch (error) {
+        // The current-page toggle still works when storage is unavailable.
+      }
+      syncSidebarCollapseButton();
+    });
+    syncSidebarCollapseButton();
+  }
+
   var mobileMenuButton = document.querySelector('[data-mobile-menu]');
+  var mobileMoreButton = document.querySelector('[data-mobile-more]');
   var mobileMask = document.querySelector('[data-mobile-mask]');
   var mobileCloseButton = document.querySelector('[data-mobile-close]');
+  var mobileSidebar = document.getElementById('mainSidebar');
+  var drawerReturnFocus = null;
+
+  function syncMobileMenuAccessibility() {
+    if (!mobileSidebar) return;
+    var isMobile = window.matchMedia('(max-width: 900px)').matches;
+    if (!isMobile) {
+      document.body.classList.remove('drawer-open');
+      if (mobileMenuButton) mobileMenuButton.setAttribute('aria-expanded', 'false');
+      if (mobileMoreButton) mobileMoreButton.setAttribute('aria-expanded', 'false');
+    }
+    var isOpen = document.body.classList.contains('drawer-open');
+    mobileSidebar.inert = isMobile && !isOpen;
+    if (isMobile && !isOpen) mobileSidebar.setAttribute('aria-hidden', 'true');
+    else mobileSidebar.removeAttribute('aria-hidden');
+  }
+
+  function openMobileMenu(trigger) {
+    drawerReturnFocus = trigger || document.activeElement;
+    document.body.classList.add('drawer-open');
+    if (mobileMenuButton) mobileMenuButton.setAttribute('aria-expanded', 'true');
+    if (mobileMoreButton) mobileMoreButton.setAttribute('aria-expanded', 'true');
+    syncMobileMenuAccessibility();
+    window.setTimeout(function () {
+      if (mobileCloseButton) mobileCloseButton.focus();
+    }, 0);
+  }
+
+  function closeMobileMenu() {
+    var wasOpen = document.body.classList.contains('drawer-open');
+    document.body.classList.remove('drawer-open');
+    if (mobileMenuButton) mobileMenuButton.setAttribute('aria-expanded', 'false');
+    if (mobileMoreButton) mobileMoreButton.setAttribute('aria-expanded', 'false');
+    syncMobileMenuAccessibility();
+    if (wasOpen && drawerReturnFocus && document.contains(drawerReturnFocus)) drawerReturnFocus.focus();
+  }
   if (mobileMenuButton) {
     mobileMenuButton.addEventListener('click', function () {
-      document.body.classList.toggle('drawer-open');
+      if (document.body.classList.contains('drawer-open')) closeMobileMenu();
+      else openMobileMenu(mobileMenuButton);
+    });
+  }
+  if (mobileMoreButton) {
+    mobileMoreButton.addEventListener('click', function () {
+      openMobileMenu(mobileMoreButton);
     });
   }
   if (mobileMask) mobileMask.addEventListener('click', closeMobileMenu);
@@ -197,6 +354,12 @@
   document.querySelectorAll('.sidebar .nav a,.sidebar .logout').forEach(function (link) {
     link.addEventListener('click', closeMobileMenu);
   });
+  window.addEventListener('resize', function () {
+    syncMobileMenuAccessibility();
+    syncSidebarCollapseButton();
+    if (window.matchMedia('(max-width: 900px)').matches) setAccountMenuOpen(false, false);
+  });
+  syncMobileMenuAccessibility();
   document.querySelectorAll('[data-mobile-collapse]').forEach(function (panel) {
     var button = panel.querySelector('[data-mobile-collapse-toggle]');
     if (!button) return;
@@ -209,9 +372,27 @@
   });
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
-      document.querySelectorAll('.modal.open,.date-popover.open').forEach(function (item) { item.classList.remove('open'); });
-      document.body.classList.remove('modal-open');
+      var openModals = document.querySelectorAll('.modal.open');
+      if (openModals.length) closeModal(openModals[openModals.length - 1]);
+      document.querySelectorAll('.date-popover.open').forEach(function (item) { item.classList.remove('open'); });
+      setAccountMenuOpen(false, Boolean(accountMenu && accountMenu.classList.contains('open')));
       closeMobileMenu();
+    }
+    if (event.key === 'Tab') {
+      var modals = document.querySelectorAll('.modal.open');
+      if (!modals.length) return;
+      var activeModal = modals[modals.length - 1];
+      var focusable = Array.prototype.slice.call(activeModal.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]):not([aria-hidden="true"]),select:not([disabled]):not([aria-hidden="true"]):not([tabindex="-1"]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"]):not([aria-hidden="true"])'));
+      if (!focusable.length) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
   });
   document.querySelectorAll('input[type="number"]').forEach(function (input) {
@@ -228,6 +409,16 @@
     var startInput = document.querySelector('[data-datepicker-start]');
     var endInput = document.querySelector('[data-datepicker-end]');
     if (!startInput || !endInput) return;
+    function openPickerOnClick(input) {
+      input.addEventListener('click', function () {
+        if (input.disabled || input.readOnly || typeof input.showPicker !== 'function') return;
+        try {
+          input.showPicker();
+        } catch (error) {
+          // Keep the browser's default date-input behavior as the fallback.
+        }
+      });
+    }
     function normalize() {
       if (!startInput.value || !endInput.value) return;
       var start = parseDate(startInput.value);
@@ -237,6 +428,8 @@
         else startInput.value = endInput.value;
       }
     }
+    openPickerOnClick(startInput);
+    openPickerOnClick(endInput);
     startInput.addEventListener('change', normalize);
     endInput.addEventListener('change', normalize);
   }
@@ -267,6 +460,7 @@
     var chargeInput = document.querySelector('[data-sale-charge]');
     var profitInput = document.querySelector('[data-sale-profit]');
     var stockLabel = document.querySelector('[data-sale-stock-label]');
+    var stockControl = stockLabel && stockLabel.closest('.sale-stock-control');
     var stockModal = document.getElementById('stockPickerModal');
     if (!goodsSelect || !stockIdInput || !stockModal) return;
     var saleForm = goodsSelect.closest('form');
@@ -293,6 +487,7 @@
       if (chargeInput) chargeInput.value = '';
       if (profitInput) profitInput.value = '';
       if (stockLabel) stockLabel.textContent = '未选择库存批次';
+      if (stockControl) stockControl.classList.remove('has-value');
     }
     function filterRows() {
       var goodsId = goodsSelect.value;
@@ -318,9 +513,9 @@
         if (stockLabel) {
           stockLabel.textContent = (button.dataset.stockName || '库存批次') + ' / 库存 ' + (button.dataset.stockCount || '0') + ' / 单价 ' + (button.dataset.stockPrice || '0');
         }
+        if (stockControl) stockControl.classList.add('has-value');
         recalcSale();
-        stockModal.classList.remove('open');
-        stockModal.setAttribute('aria-hidden', 'true');
+        closeModal(button);
       });
     });
     if (salePriceInput) salePriceInput.addEventListener('input', recalcSale);
@@ -410,10 +605,12 @@
           return;
         }
         var rect = trigger.getBoundingClientRect();
-        popover.style.left = Math.max(12, rect.left + window.scrollX) + 'px';
+        popover.style.left = Math.max(window.scrollX + 12, rect.left + window.scrollX) + 'px';
         popover.style.top = rect.bottom + window.scrollY + 8 + 'px';
         popover.classList.add('open');
         renderMonth();
+        var maxLeft = window.scrollX + window.innerWidth - popover.offsetWidth - 12;
+        popover.style.left = Math.max(window.scrollX + 12, Math.min(rect.left + window.scrollX, maxLeft)) + 'px';
       });
     });
     popover.addEventListener('click', function (event) {
@@ -551,6 +748,10 @@
       var key = container.dataset.rankSort || 'value';
       var dir = container.dataset.rankDir || 'desc';
       var points = sortRankPoints(readPoints(container), key, dir);
+      if (!points.length) {
+        container.innerHTML = '<div class="chart-empty">暂无库存数据</div>';
+        return;
+      }
       var max = Math.max.apply(null, points.map(function (p) { return p[key]; })) || 1;
       container.innerHTML = points.map(function (p) {
         var width = Math.max(4, Math.round((p[key] / max) * 100));
@@ -628,79 +829,27 @@
     window.addEventListener('load', renderCharts);
   }
 
+  function setupResponsiveDetails() {
+    var mobile = window.matchMedia('(max-width: 900px)').matches;
+    document.querySelectorAll('[data-responsive-details]').forEach(function (details) {
+      details.open = !mobile;
+    });
+  }
+
   function setupLoginRemember() {
     var form = document.querySelector('[data-login-form]');
     if (!form || !window.localStorage) return;
     var usernameInput = form.querySelector('[data-login-username]');
-    var passwordInput = form.querySelector('[data-login-password]');
-    var passwordRealInput = form.querySelector('[data-login-password-real]');
     var rememberInput = form.querySelector('[data-login-remember]');
     var storageKey = 'shop.login.remember';
-    if (!usernameInput || !passwordInput || !passwordRealInput || !rememberInput) return;
-    var maskChar = '*';
-    var realPassword = passwordInput.value || '';
-    var renderingPassword = false;
-
-    function mask(value) {
-      return new Array((value || '').length + 1).join(maskChar);
-    }
-
-    function replacePasswordRange(start, end, text) {
-      realPassword = realPassword.slice(0, start) + (text || '') + realPassword.slice(end);
-      renderPassword(start + (text || '').length);
-    }
-
-    function renderPassword(position) {
-      renderingPassword = true;
-      passwordInput.value = mask(realPassword);
-      passwordRealInput.value = realPassword;
-      if (document.activeElement === passwordInput && passwordInput.setSelectionRange) {
-        passwordInput.setSelectionRange(position, position);
-      }
-      renderingPassword = false;
-    }
-
-    passwordInput.addEventListener('beforeinput', function (event) {
-      var start = passwordInput.selectionStart || 0;
-      var end = passwordInput.selectionEnd || start;
-      var type = event.inputType || '';
-      if (type.indexOf('insert') === 0) {
-        event.preventDefault();
-        var text = type === 'insertFromPaste' && event.clipboardData ? event.clipboardData.getData('text') : event.data;
-        replacePasswordRange(start, end, text || '');
-      } else if (type === 'deleteContentBackward') {
-        event.preventDefault();
-        if (start === end && start > 0) start -= 1;
-        replacePasswordRange(start, end, '');
-      } else if (type === 'deleteContentForward') {
-        event.preventDefault();
-        if (start === end && end < realPassword.length) end += 1;
-        replacePasswordRange(start, end, '');
-      } else if (type === 'deleteByCut') {
-        event.preventDefault();
-        replacePasswordRange(start, end, '');
-      }
-    });
-
-    passwordInput.addEventListener('paste', function (event) {
-      if (!event.clipboardData) return;
-      event.preventDefault();
-      replacePasswordRange(passwordInput.selectionStart || 0, passwordInput.selectionEnd || 0, event.clipboardData.getData('text'));
-    });
-
-    passwordInput.addEventListener('input', function () {
-      if (renderingPassword) return;
-      if (passwordInput.value && passwordInput.value !== mask(passwordInput.value)) realPassword = passwordInput.value;
-      renderPassword(realPassword.length);
-    });
+    if (!usernameInput || !rememberInput) return;
 
     try {
       var saved = JSON.parse(window.localStorage.getItem(storageKey) || 'null');
       if (saved && saved.remember) {
         usernameInput.value = saved.username || usernameInput.value;
-        realPassword = saved.password || '';
-        renderPassword(realPassword.length);
         rememberInput.checked = true;
+        window.localStorage.setItem(storageKey, JSON.stringify({ remember: true, username: usernameInput.value }));
       }
     } catch (error) {
       window.localStorage.removeItem(storageKey);
@@ -714,14 +863,11 @@
       if (rememberInput.checked) {
         window.localStorage.setItem(storageKey, JSON.stringify({
           remember: true,
-          username: usernameInput.value,
-          password: realPassword
+          username: usernameInput.value
         }));
       } else {
         window.localStorage.removeItem(storageKey);
       }
-      passwordRealInput.value = realPassword;
-      renderPassword(realPassword.length);
     });
   }
 
@@ -731,6 +877,7 @@
   setupStockPicker();
   setupMonthPicker();
   setupAssetSnapshotSave();
+  setupResponsiveDetails();
   setupDashboardCharts();
   setupLoginRemember();
 })();

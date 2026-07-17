@@ -52,13 +52,24 @@ public class StatsRepository {
         stats.setMonthIncome(doubleValue("SELECT COALESCE(SUM(profit),0) FROM t_shop_sale WHERE createdTime >= ? AND createdTime < ?", monthStart, nextMonthStart));
         double monthExtraCost = doubleValue("SELECT COALESCE(SUM(amount),0) FROM t_shop_extra_cost WHERE createdTime >= ? AND createdTime < ?", monthStart, nextMonthStart);
         stats.setMonthProfit(stats.getMonthIncome() - monthExtraCost);
-        stats.setMonthSaleAmount(doubleValue("SELECT COALESCE(SUM(sellingPrice),0) FROM t_shop_sale WHERE createdTime >= ? AND createdTime < ?", monthStart, nextMonthStart));
+        stats.setMonthSaleAmount(currentMonthSaleAmount());
         stats.setMonthOrderCount(intValue("SELECT COUNT(*) FROM t_shop_sale WHERE createdTime >= ? AND createdTime < ?", monthStart, nextMonthStart));
         stats.setYearSaleAmount(doubleValue("SELECT COALESCE(SUM(sellingPrice),0) FROM t_shop_sale WHERE createdTime >= ? AND createdTime < ?", yearStart, nextYearStart));
         stats.setYearIncome(doubleValue("SELECT COALESCE(SUM(profit),0) FROM t_shop_sale WHERE createdTime >= ? AND createdTime < ?", yearStart, nextYearStart));
         double yearExtraCost = doubleValue("SELECT COALESCE(SUM(amount),0) FROM t_shop_extra_cost WHERE createdTime >= ? AND createdTime < ?", yearStart, nextYearStart);
         stats.setYearProfit(stats.getYearIncome() - yearExtraCost);
         return stats;
+    }
+
+    public double currentMonthSaleAmount() {
+        YearMonth currentMonth = YearMonth.now();
+        LocalDateTime monthStart = currentMonth.atDay(1).atStartOfDay();
+        LocalDateTime nextMonthStart = currentMonth.plusMonths(1).atDay(1).atStartOfDay();
+        return doubleValue(
+                "SELECT COALESCE(SUM(sellingPrice),0) FROM t_shop_sale WHERE createdTime >= ? AND createdTime < ?",
+                monthStart,
+                nextMonthStart
+        );
     }
 
     public List<Map<String, Object>> topGoods() {

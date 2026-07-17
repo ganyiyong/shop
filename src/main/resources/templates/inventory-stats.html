@@ -54,7 +54,7 @@
             <span class="soft-label">默认按库存数量升序</span>
         </div>
         <div class="table-wrap">
-            <table>
+            <table class="responsive-table data-table table-inventory-stats">
                 <thead>
                 <tr>
                     <th>商品</th>
@@ -68,16 +68,16 @@
                 </thead>
                 <tbody>
                 <tr th:each="row : ${rows}">
-                    <td>
+                    <td class="table-primary" data-label="商品">
                         <strong th:text="${row.goodsName}">商品</strong>
                         <small th:text="${(row.goodsType == null ? '' : row.goodsType) + (row.goodsModel == null || row.goodsModel == '' ? '' : '-' + row.goodsModel)}">类型型号</small>
                     </td>
-                    <td th:text="${row.producer}">生产商</td>
-                    <td th:text="${@money.format(row.unitPrice)}">￥0.00</td>
-                    <td th:text="${row.stock}">0</td>
-                    <td th:text="${@money.format(row.stockAmount)}">￥0.00</td>
-                    <td th:text="${row.goodsSource == null || row.goodsSource == '' ? '厂家进货' : row.goodsSource}">厂家进货</td>
-                    <td th:text="${row.createdTime == null ? '-' : #temporals.format(row.createdTime, 'yyyy-MM-dd HH:mm')}">时间</td>
+                    <td data-label="生产商" th:text="${row.producer}">生产商</td>
+                    <td data-label="进货单价" th:text="${@money.format(row.unitPrice)}">￥0.00</td>
+                    <td data-label="库存" th:text="${row.stock}">0</td>
+                    <td data-label="库存总金额" th:text="${@money.format(row.stockAmount)}">￥0.00</td>
+                    <td data-label="商品来源" th:text="${row.goodsSource == null || row.goodsSource == '' ? '厂家进货' : row.goodsSource}">厂家进货</td>
+                    <td data-label="入库时间" th:text="${row.createdTime == null ? '-' : #temporals.format(row.createdTime, 'yyyy-MM-dd HH:mm')}">时间</td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(rows)}">
                     <td colspan="7" class="empty">暂无库存统计数据</td>

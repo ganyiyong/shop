@@ -3,7 +3,8 @@
       th:replace="layout :: layout('库存管理', '采购入库与库存明细', 'stock', ~{::content})">
 <body>
 <th:block th:fragment="content">
-    <section class="toolbar panel flat">
+    <div class="management-page">
+    <section class="panel filter-panel">
         <form class="search-form wide-search auto-filter" th:action="@{/stock}">
             <label>商品
                 <select name="goodsId" data-auto-submit>
@@ -20,40 +21,45 @@
                     <option value="all" th:selected="${stockScope == 'all'}">全部库存</option>
                 </select>
             </label>
-            <button class="btn" type="submit">查询</button>
+            <div class="search-form__actions">
+                <button class="btn" type="submit">查询</button>
+                <button class="btn primary" type="button" data-modal-open="stockModal"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#plus"></use></svg>添加库存</button>
+            </div>
         </form>
-        <button class="btn primary" type="button" data-modal-open="stockModal">添加库存</button>
     </section>
 
-    <section class="panel">
+    <section class="panel data-panel">
         <div class="table-wrap">
-            <table>
+            <table class="responsive-table data-table table-stock">
                 <thead><tr><th>商品</th><th>箱数</th><th>盒数</th><th>进货单价</th><th>库存</th><th>总金额</th><th>库存金额</th><th>时间</th><th>操作</th></tr></thead>
                 <tbody>
                 <tr th:each="s : ${pageData.records}">
-                    <td><strong th:text="${s.goodsName}">商品</strong></td>
-                    <td th:text="${s.ctns}">0</td>
-                    <td th:text="${s.number}">0</td>
-                    <td th:text="${@money.format(s.unitPrice)}">￥0.00</td>
-                    <td><span class="stock-badge" th:text="${s.stock}">0</span></td>
-                    <td th:text="${@money.format(s.totalAmount)}">￥0.00</td>
-                    <td th:text="${@money.format(s.stockTotalAmount)}">￥0.00</td>
-                    <td th:text="${#temporals.format(s.createdTime, 'yyyy-MM-dd HH:mm')}">时间</td>
-                    <td class="actions">
-                        <button class="btn small" type="button" data-modal-open="stockModal"
-                                th:attr="data-id=${s.id},data-goodsid=${s.goodsId},data-ctns=${s.ctns},data-number=${s.number},data-unitprice=${s.unitPrice},data-cost=${s.cost},data-sellingprice=${s.sellingPrice},data-stock=${s.stock}">编辑</button>
-                        <form method="post" th:action="@{/stock/delete}" onsubmit="return confirm('确认删除该库存记录？')">
-                            <input type="hidden" name="id" th:value="${s.id}">
-                            <button class="btn danger small" type="submit">删除</button>
-                        </form>
+                    <td class="table-primary" data-label="商品"><strong th:text="${s.goodsName}">商品</strong></td>
+                    <td data-label="箱数" th:text="${s.ctns}">0</td>
+                    <td data-label="盒数" th:text="${s.number}">0</td>
+                    <td data-label="进货单价" th:text="${@money.format(s.unitPrice)}">￥0.00</td>
+                    <td data-label="库存"><span class="stock-badge" th:text="${s.stock}">0</span></td>
+                    <td data-label="总金额" th:text="${@money.format(s.totalAmount)}">￥0.00</td>
+                    <td data-label="库存金额" th:text="${@money.format(s.stockTotalAmount)}">￥0.00</td>
+                    <td data-label="时间" th:text="${#temporals.format(s.createdTime, 'yyyy-MM-dd HH:mm')}">时间</td>
+                    <td class="table-actions" data-label="操作">
+                        <div class="actions">
+                            <button class="btn small" type="button" data-modal-open="stockModal"
+                                    th:attr="data-id=${s.id},data-goodsid=${s.goodsId},data-ctns=${s.ctns},data-number=${s.number},data-unitprice=${s.unitPrice},data-cost=${s.cost},data-sellingprice=${s.sellingPrice},data-stock=${s.stock}">编辑</button>
+                            <form method="post" th:action="@{/stock/delete}" onsubmit="return confirm('确认删除该库存记录？')">
+                                <input type="hidden" name="id" th:value="${s.id}">
+                                <button class="btn danger small" type="submit">删除</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(pageData.records)}"><td colspan="9" class="empty">暂无库存记录</td></tr>
                 </tbody>
             </table>
         </div>
-        <div class="pager"><span th:text="${'共 ' + pageData.total + ' 条，第 ' + pageData.page + ' / ' + pageData.totalPages + ' 页'}">共 0 条</span><div><a class="btn small" th:classappend="${!pageData.hasPrevious} ? ' disabled'" th:href="@{/stock(goodsId=${goodsId},stockScope=${stockScope},page=${pageData.previousPage},size=${pageData.size})}">上一页</a><a class="btn small" th:classappend="${!pageData.hasNext} ? ' disabled'" th:href="@{/stock(goodsId=${goodsId},stockScope=${stockScope},page=${pageData.nextPage},size=${pageData.size})}">下一页</a></div></div>
+        <div class="pager"><span th:text="${'共 ' + pageData.total + ' 条，第 ' + pageData.page + ' / ' + pageData.totalPages + ' 页'}">共 0 条</span><div><a class="btn small" th:classappend="${!pageData.hasPrevious} ? ' disabled'" th:attr="aria-disabled=${!pageData.hasPrevious},tabindex=${!pageData.hasPrevious ? -1 : null}" th:href="@{/stock(goodsId=${goodsId},stockScope=${stockScope},page=${pageData.previousPage},size=${pageData.size})}">上一页</a><a class="btn small" th:classappend="${!pageData.hasNext} ? ' disabled'" th:attr="aria-disabled=${!pageData.hasNext},tabindex=${!pageData.hasNext ? -1 : null}" th:href="@{/stock(goodsId=${goodsId},stockScope=${stockScope},page=${pageData.nextPage},size=${pageData.size})}">下一页</a></div></div>
     </section>
+    </div>
 
     <div class="modal" id="stockModal" aria-hidden="true">
         <div class="modal-mask" data-modal-close></div>

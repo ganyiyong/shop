@@ -1,64 +1,112 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title, subtitle, active, content)">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${title} + ' - 库存系统'">库存系统</title>
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <script>
+        try {
+            if (localStorage.getItem('shop.sidebar.collapsed') === 'true') {
+                document.documentElement.classList.add('sidebar-collapsed');
+            }
+        } catch (error) {
+            // Local storage can be unavailable in restricted browsing modes.
+        }
+    </script>
     <link rel="stylesheet" th:href="@{/assets/css/app.css(v=${#dates.createNow().time})}">
 </head>
-<body>
+<body th:class="${'page-' + active}">
 <div class="app-shell">
     <div class="mobile-header">
-        <button class="mobile-menu-btn" type="button" data-mobile-menu aria-label="打开菜单">☰</button>
+        <span class="mobile-brand-mark" aria-hidden="true"><svg class="ui-icon"><use href="/assets/icons.svg#package"></use></svg></span>
         <strong th:text="${title}">首页</strong>
         <div class="mobile-actions">
-            <button th:if="${active == 'stats'}" class="mobile-sale-btn" type="button" data-modal-open="saleModal" aria-label="录入销售">＋</button>
+            <button th:if="${active == 'stats'}" class="mobile-sale-btn" type="button" data-modal-open="saleModal" aria-label="录入销售">
+                <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#plus"></use></svg>
+            </button>
         </div>
     </div>
     <div class="drawer-mask" data-mobile-mask></div>
-    <aside class="sidebar">
+    <aside class="sidebar" id="mainSidebar" aria-label="主导航">
         <div class="drawer-top">
             <div class="brand">
-                <span class="brand-mark">N</span>
+                <span class="brand-mark" aria-hidden="true"><svg class="ui-icon"><use href="/assets/icons.svg#package"></use></svg></span>
                 <div>
                     <strong>ShopStock</strong>
-                    <small>电商库存系统</small>
+                    <small>库存经营管理</small>
                 </div>
             </div>
             <button class="drawer-close-btn" type="button" data-mobile-close aria-label="关闭菜单">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#close"></use></svg>
             </button>
         </div>
         <nav class="nav">
             <span class="nav-group">经营概览</span>
-            <a th:classappend="${active == 'stats'} ? 'active'" th:href="@{/dashboard}"><span>▦</span>首页看板</a>
-            <a th:classappend="${active == 'inventoryStats'} ? 'active'" th:href="@{/inventory-stats}"><span>≡</span>库存统计</a>
-            <a th:classappend="${active == 'assets'} ? 'active'" th:href="@{/assets}"><span>¤</span>资产管理</a>
+            <a title="首页看板" th:classappend="${active == 'stats'} ? 'active'" th:href="@{/dashboard}" th:attr="aria-current=${active == 'stats' ? 'page' : null}"><span class="nav-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#dashboard"></use></svg></span><span class="nav-label">首页看板</span></a>
+            <a title="库存统计" th:classappend="${active == 'inventoryStats'} ? 'active'" th:href="@{/inventory-stats}" th:attr="aria-current=${active == 'inventoryStats' ? 'page' : null}"><span class="nav-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#chart"></use></svg></span><span class="nav-label">库存统计</span></a>
+            <a title="资产管理" th:classappend="${active == 'assets'} ? 'active'" th:href="@{/assets}" th:attr="aria-current=${active == 'assets' ? 'page' : null}"><span class="nav-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#wallet"></use></svg></span><span class="nav-label">资产管理</span></a>
             <span class="nav-group">业务管理</span>
-            <a th:classappend="${active == 'goods'} ? 'active'" th:href="@{/goods}"><span>□</span>商品列表</a>
-            <a th:classappend="${active == 'stock'} ? 'active'" th:href="@{/stock}"><span>◇</span>库存管理</a>
-            <a th:classappend="${active == 'costs'} ? 'active'" th:href="@{/costs}"><span>￥</span>额外成本</a>
-            <a th:classappend="${active == 'sales'} ? 'active'" th:href="@{/sales}"><span>✓</span>销售管理</a>
+            <a title="商品列表" th:classappend="${active == 'goods'} ? 'active'" th:href="@{/goods}" th:attr="aria-current=${active == 'goods' ? 'page' : null}"><span class="nav-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#tag"></use></svg></span><span class="nav-label">商品列表</span></a>
+            <a title="库存管理" th:classappend="${active == 'stock'} ? 'active'" th:href="@{/stock}" th:attr="aria-current=${active == 'stock' ? 'page' : null}"><span class="nav-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#package"></use></svg></span><span class="nav-label">库存管理</span></a>
+            <a title="额外成本" th:classappend="${active == 'costs'} ? 'active'" th:href="@{/costs}" th:attr="aria-current=${active == 'costs' ? 'page' : null}"><span class="nav-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#receipt"></use></svg></span><span class="nav-label">额外成本</span></a>
+            <a title="销售管理" th:classappend="${active == 'sales'} ? 'active'" th:href="@{/sales}" th:attr="aria-current=${active == 'sales' ? 'page' : null}"><span class="nav-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#bag"></use></svg></span><span class="nav-label">销售管理</span></a>
         </nav>
         <div class="side-footer">
             <div class="side-user">
-                <span class="side-avatar" th:text="${#strings.isEmpty(session.loginUser) ? 'A' : #strings.substring(session.loginUser,0,1)}">A</span>
-                <div><strong th:text="${session.loginUser}">admin</strong><small>管理员</small></div>
+                <span class="side-avatar topbar-avatar" aria-hidden="true"
+                      th:text="${#strings.isEmpty(session.loginUser) ? 'AD' : (#strings.length(session.loginUser) >= 2 ? #strings.toUpperCase(#strings.substring(session.loginUser,0,2)) : #strings.toUpperCase(session.loginUser))}">AD</span>
+                <div class="account-copy">
+                    <strong class="account-name" th:text="${session.loginUser}">admin</strong>
+                    <small>Admin</small>
+                </div>
             </div>
-            <a class="logout" th:href="@{/logout}">退出登录</a>
+            <a class="logout account-logout" th:href="@{/logout}"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#logout"></use></svg>退出登录</a>
         </div>
+        <button class="sidebar-collapse" type="button" data-sidebar-collapse aria-controls="mainSidebar"
+                aria-expanded="true" aria-label="收起菜单" title="收起菜单">
+            <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#chevrons-left"></use></svg>
+            <span data-sidebar-collapse-label>收起菜单</span>
+        </button>
     </aside>
     <main class="main">
         <header class="topbar">
-            <div>
-                <p class="eyebrow" th:text="${subtitle}">经营概览</p>
-                <h1 th:text="${title}">首页看板</h1>
+            <div class="topbar-inner">
+                <div class="page-heading">
+                    <h1 th:text="${title}">首页看板</h1>
+                    <p class="eyebrow" th:text="${subtitle}">经营概览</p>
+                </div>
+                <div class="topbar-actions">
+                    <div class="topbar-sales" aria-label="本月销售额">
+                        <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#coins"></use></svg>
+                        <div><strong th:text="${@money.format(layoutMonthSaleAmount)}">￥0.00</strong></div>
+                    </div>
+                    <div class="account-menu" data-account-menu>
+                        <button class="account-trigger" type="button" data-account-trigger
+                                aria-haspopup="true" aria-expanded="false" aria-controls="headerAccountDropdown">
+                            <span class="topbar-avatar"
+                                  th:text="${#strings.isEmpty(session.loginUser) ? 'AD' : (#strings.length(session.loginUser) >= 2 ? #strings.toUpperCase(#strings.substring(session.loginUser,0,2)) : #strings.toUpperCase(session.loginUser))}">AD</span>
+                            <span class="account-copy">
+                                <span class="account-name" th:text="${session.loginUser}">admin</span>
+                                <small>Admin</small>
+                            </span>
+                            <span class="account-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div class="account-dropdown" id="headerAccountDropdown" data-account-dropdown hidden>
+                            <a class="account-logout" th:href="@{/logout}"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#logout"></use></svg>退出登录</a>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="user-pill"><span class="dot"></span><span th:text="${session.loginUser}">admin</span></div>
         </header>
         <th:block th:replace="${content}"></th:block>
     </main>
+    <nav class="mobile-bottom-nav" aria-label="移动端快捷导航">
+        <a th:classappend="${active == 'stats'} ? 'active'" th:href="@{/dashboard}"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#dashboard"></use></svg><span>概览</span></a>
+        <a th:classappend="${active == 'assets'} ? 'active'" th:href="@{/assets}"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#wallet"></use></svg><span>资产</span></a>
+        <a th:classappend="${active == 'sales'} ? 'active'" th:href="@{/sales}"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#bag"></use></svg><span>销售</span></a>
+        <button type="button" data-mobile-more th:classappend="${active == 'goods' or active == 'stock' or active == 'inventoryStats' or active == 'costs'} ? 'active'" aria-label="打开全部导航" aria-controls="mainSidebar" aria-expanded="false"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#more"></use></svg><span>更多</span></button>
+    </nav>
 </div>
 <script th:src="@{/assets/js/app.js(v=${#dates.createNow().time})}"></script>
 </body>

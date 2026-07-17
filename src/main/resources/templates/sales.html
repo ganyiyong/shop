@@ -22,20 +22,16 @@
                 <input class="datepicker-input" type="date" name="endDate" th:value="${endDate}" data-datepicker-end>
             </label>
             <button class="btn" type="submit">查询</button>
-            <button class="btn success" type="submit" data-sales-view-submit="stats">商品统计</button>
+            <button class="btn primary" type="submit" data-sales-view-submit="stats">商品统计</button>
         </form>
         <div class="actions">
-            <button class="btn primary" type="button" data-modal-open="saleModal">录入销售</button>
+            <button class="btn primary" type="button" data-modal-open="saleModal"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#plus"></use></svg>录入销售</button>
         </div>
     </section>
 
     <section class="panel" th:if="${view == 'detail'}">
-        <div class="panel-head">
-            <h2>销售明细</h2>
-            <span class="soft-label">按当前筛选条件查看销售流水</span>
-        </div>
         <div class="table-wrap">
-            <table>
+            <table class="responsive-table data-table table-sales-detail">
                 <thead>
                 <tr>
                     <th>商品</th>
@@ -52,16 +48,16 @@
                 </thead>
                 <tbody>
                 <tr th:each="s : ${pageData.records}">
-                    <td><strong th:text="${s.goodsName}">商品</strong><small th:text="${s.remark}">备注</small></td>
-                    <td th:text="${s.platform}">平台</td>
-                    <td th:text="${s.shop}">店铺</td>
-                    <td th:text="${@money.format(s.costPrice)}">￥0.00</td>
-                    <td th:text="${@money.format(s.sellingPrice)}">￥0.00</td>
-                    <td th:text="${@money.format(s.charge)}">￥0.00</td>
-                    <td th:class="${s.profit >= 0} ? 'text-good' : 'text-bad'" th:text="${@money.format(s.profit)}">￥0.00</td>
-                    <td th:text="${s.goodsSource}">来源</td>
-                    <td th:text="${#temporals.format(s.createdTime, 'yyyy-MM-dd HH:mm')}">时间</td>
-                    <td>
+                    <td class="table-primary" data-label="商品"><strong th:text="${s.goodsName}">商品</strong><small th:text="${s.remark}">备注</small></td>
+                    <td data-label="平台" th:text="${s.platform}">平台</td>
+                    <td data-label="店铺" th:text="${s.shop}">店铺</td>
+                    <td data-label="成本价" th:text="${@money.format(s.costPrice)}">￥0.00</td>
+                    <td data-label="销售价" th:text="${@money.format(s.sellingPrice)}">￥0.00</td>
+                    <td data-label="手续费" th:text="${@money.format(s.charge)}">￥0.00</td>
+                    <td data-label="收入" th:class="${s.profit >= 0} ? 'text-good' : 'text-bad'" th:text="${@money.format(s.profit)}">￥0.00</td>
+                    <td data-label="来源" th:text="${s.goodsSource}">来源</td>
+                    <td data-label="时间" th:text="${#temporals.format(s.createdTime, 'yyyy-MM-dd HH:mm')}">时间</td>
+                    <td class="table-actions" data-label="操作">
                         <form method="post" th:action="@{/sales/delete}" onsubmit="return confirm('确认删除该销售记录？删除不会回滚库存。')">
                             <input type="hidden" name="id" th:value="${s.id}">
                             <button class="btn danger small" type="submit">删除</button>
@@ -77,8 +73,8 @@
         <div class="pager">
             <span th:text="${'共 ' + pageData.total + ' 条，第 ' + pageData.page + ' / ' + pageData.totalPages + ' 页'}">共 0 条</span>
             <div>
-                <a class="btn small" th:classappend="${!pageData.hasPrevious} ? ' disabled'" th:href="@{/sales(goodsId=${goodsId},startDate=${startDate},endDate=${endDate},view='detail',page=${pageData.previousPage},size=${pageData.size})}">上一页</a>
-                <a class="btn small" th:classappend="${!pageData.hasNext} ? ' disabled'" th:href="@{/sales(goodsId=${goodsId},startDate=${startDate},endDate=${endDate},view='detail',page=${pageData.nextPage},size=${pageData.size})}">下一页</a>
+                <a class="btn small" th:classappend="${!pageData.hasPrevious} ? ' disabled'" th:attr="aria-disabled=${!pageData.hasPrevious},tabindex=${!pageData.hasPrevious ? -1 : null}" th:href="@{/sales(goodsId=${goodsId},startDate=${startDate},endDate=${endDate},view='detail',page=${pageData.previousPage},size=${pageData.size})}">上一页</a>
+                <a class="btn small" th:classappend="${!pageData.hasNext} ? ' disabled'" th:attr="aria-disabled=${!pageData.hasNext},tabindex=${!pageData.hasNext ? -1 : null}" th:href="@{/sales(goodsId=${goodsId},startDate=${startDate},endDate=${endDate},view='detail',page=${pageData.nextPage},size=${pageData.size})}">下一页</a>
             </div>
         </div>
     </section>
@@ -92,7 +88,7 @@
             <a class="btn small" th:href="@{/sales(goodsId=${goodsId},startDate=${startDate},endDate=${endDate})}">返回明细</a>
         </div>
             <div class="table-wrap">
-                <table>
+                <table class="responsive-table data-table table-sales-stats">
                     <thead>
                     <tr>
                         <th>商品</th>
@@ -106,13 +102,13 @@
                     </thead>
                     <tbody>
                     <tr th:each="row : ${goodsStats}">
-                        <td th:text="${row.goodsName}">商品</td>
-                        <td th:text="${row.goodsSource}">进货</td>
-                        <td th:text="${row.saleCount}">0</td>
-                        <td th:text="${@money.format(row.costPrice)}">￥0.00</td>
-                        <td th:text="${@money.format(row.sellingPrice)}">￥0.00</td>
-                        <td th:text="${@money.format(row.charge)}">￥0.00</td>
-                        <td th:class="${row.profit >= 0} ? 'text-good' : 'text-bad'" th:text="${@money.format(row.profit)}">￥0.00</td>
+                        <td class="table-primary" data-label="商品" th:text="${row.goodsName}">商品</td>
+                        <td data-label="商品来源" th:text="${row.goodsSource}">进货</td>
+                        <td data-label="销售数量" th:text="${row.saleCount}">0</td>
+                        <td data-label="成本价" th:text="${@money.format(row.costPrice)}">￥0.00</td>
+                        <td data-label="销售价" th:text="${@money.format(row.sellingPrice)}">￥0.00</td>
+                        <td data-label="手续费" th:text="${@money.format(row.charge)}">￥0.00</td>
+                        <td data-label="利润" th:class="${row.profit >= 0} ? 'text-good' : 'text-bad'" th:text="${@money.format(row.profit)}">￥0.00</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(goodsStats)}">
                         <td colspan="7" class="empty">当前条件暂无商品统计数据</td>
@@ -120,12 +116,12 @@
                     </tbody>
                     <tfoot th:if="${!#lists.isEmpty(goodsStats)}">
                     <tr class="total-row">
-                        <td colspan="2">累计：</td>
-                        <td th:text="${statsSaleCount}">0</td>
-                        <td th:text="${@money.format(statsCostPrice)}">￥0.00</td>
-                        <td th:text="${@money.format(statsSellingPrice)}">￥0.00</td>
-                        <td th:text="${@money.format(statsCharge)}">￥0.00</td>
-                        <td th:text="${@money.format(statsProfit)}">￥0.00</td>
+                        <td colspan="2" data-label="汇总">累计：</td>
+                        <td data-label="销售数量" th:text="${statsSaleCount}">0</td>
+                        <td data-label="成本价" th:text="${@money.format(statsCostPrice)}">￥0.00</td>
+                        <td data-label="销售价" th:text="${@money.format(statsSellingPrice)}">￥0.00</td>
+                        <td data-label="手续费" th:text="${@money.format(statsCharge)}">￥0.00</td>
+                        <td data-label="利润" th:text="${@money.format(statsProfit)}">￥0.00</td>
                     </tr>
                     </tfoot>
                 </table>
@@ -134,43 +130,80 @@
 
     <div class="modal" id="saleModal" aria-hidden="true">
         <div class="modal-mask" data-modal-close></div>
-        <section class="modal-panel">
-            <div class="modal-head"><h2>录入销售</h2><button class="icon-btn" type="button" data-modal-close>×</button></div>
-            <form class="grid-form" method="post" th:action="@{/sales/save}" th:object="${sale}">
-                <label>商品<select th:field="*{goodsId}" data-sale-goods required><option value="">请选择商品</option><option th:each="g : ${goodsList}" th:value="${g.id}" th:text="${g.name + ':' + (g.type == null ? '' : g.type) + ':' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option></select></label>
-                <div class="form-field">
-                    <span>选择库存</span>
-                    <input type="hidden" th:field="*{stockId}" data-sale-stock-id>
-                    <button class="btn primary" type="button" data-modal-open="stockPickerModal">点击选择</button>
-                    <small class="selected-stock" data-sale-stock-label>未选择库存批次</small>
+        <section class="modal-panel sale-entry-panel">
+            <div class="modal-head sale-entry-head">
+                <h2>录入销售</h2>
+                <button class="icon-btn" type="button" data-modal-close aria-label="关闭弹窗">
+                    <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#close"></use></svg>
+                </button>
+            </div>
+            <form class="sale-entry-form" method="post" th:action="@{/sales/save}" th:object="${sale}">
+                <div class="sale-entry-body">
+                    <input type="hidden" th:field="*{platform}" data-sale-platform>
+
+                    <section class="sale-form-section" aria-labelledby="saleBasicTitle">
+                        <div class="sale-form-grid">
+                            <label class="sale-span-7">商品
+                                <select th:field="*{goodsId}" data-sale-goods required>
+                                    <option value="">请选择商品</option>
+                                    <option th:each="g : ${goodsList}" th:value="${g.id}" th:text="${g.name + ':' + (g.type == null ? '' : g.type) + ':' + (g.model == null ? '' : g.model) + '【' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option>
+                                </select>
+                            </label>
+                            <div class="form-field sale-span-5">
+                                <span>库存批次</span>
+                                <input type="hidden" th:field="*{stockId}" data-sale-stock-id>
+                                <div class="sale-stock-control">
+                                    <small class="selected-stock" data-sale-stock-label>未选择库存批次</small>
+                                    <button class="btn sale-stock-button" type="button" data-modal-open="stockPickerModal">
+                                        <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#package"></use></svg>
+                                        选择库存
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-field sale-span-12">
+                                <span>店铺</span>
+                                <div class="radio-group sale-choice-grid sale-shop-options" role="radiogroup" aria-label="店铺">
+                                    <label><input type="radio" th:field="*{shop}" value="模型小屋" data-platform="拼多多" checked required><span class="sale-choice"><strong>模型小屋</strong><small>拼多多</small></span></label>
+                                    <label><input type="radio" th:field="*{shop}" value="米乐模型" data-platform="拼多多"><span class="sale-choice"><strong>米乐模型</strong><small>拼多多</small></span></label>
+                                    <label><input type="radio" th:field="*{shop}" value="星域模型" data-platform="拼多多"><span class="sale-choice"><strong>星域模型</strong><small>拼多多</small></span></label>
+                                    <label><input type="radio" th:field="*{shop}" value="幻影模玩" data-platform="淘宝"><span class="sale-choice"><strong>幻影模玩</strong><small>淘宝</small></span></label>
+                                    <label><input type="radio" th:field="*{shop}" value="完美动漫" data-platform="淘宝"><span class="sale-choice"><strong>完美动漫</strong><small>淘宝</small></span></label>
+                                    <label><input type="radio" th:field="*{shop}" value="维利动漫" data-platform="抖店"><span class="sale-choice"><strong>维利动漫</strong><small>抖店</small></span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="sale-form-section" aria-labelledby="saleAmountTitle">
+                        <h3 id="saleAmountTitle">价格结算</h3>
+                        <div class="sale-money-grid">
+                            <label class="sale-derived-field">进货单价<input type="number" step="0.01" th:field="*{costPrice}" min="0" placeholder="选择库存后带出" readonly data-sale-cost></label>
+                            <label class="sale-derived-field">发出成本<input type="number" step="0.01" min="0" placeholder="选择库存后带出" data-sale-out-cost></label>
+                            <label class="sale-price-field">销售价<input type="number" step="0.01" th:field="*{sellingPrice}" min="0" required data-sale-price></label>
+                            <label class="sale-derived-field">手续费<input type="number" step="0.01" th:field="*{charge}" min="0" value="0" readonly data-sale-charge></label>
+                            <label class="sale-derived-field sale-profit-field">预计利润<input type="number" step="0.01" th:field="*{profit}" readonly data-sale-profit></label>
+                        </div>
+                    </section>
+
+                    <section class="sale-form-section" aria-labelledby="saleExtraTitle">
+                        <h3 id="saleExtraTitle">补充信息</h3>
+                        <div class="sale-form-grid">
+                            <div class="form-field sale-span-5">
+                                <span>商品来源</span>
+                                <div class="radio-group compact-options sale-choice-grid sale-source-options" role="radiogroup" aria-label="商品来源">
+                                    <label><input type="radio" th:field="*{goodsSource}" value="进货" checked required><span class="sale-choice">进货</span></label>
+                                    <label><input type="radio" th:field="*{goodsSource}" value="倒卖"><span class="sale-choice">倒卖</span></label>
+                                    <label><input type="radio" th:field="*{goodsSource}" value="搬砖"><span class="sale-choice">搬砖</span></label>
+                                </div>
+                            </div>
+                            <label class="sale-span-7">备注<input th:field="*{remark}" maxlength="100"></label>
+                        </div>
+                    </section>
                 </div>
-                <input type="hidden" th:field="*{platform}" data-sale-platform>
-                <div class="wide form-field">
-                    <span>店铺</span>
-                    <div class="radio-group">
-                        <label><input type="radio" th:field="*{shop}" value="模型小屋" data-platform="拼多多" checked required>模型小屋</label>
-                        <label><input type="radio" th:field="*{shop}" value="米乐模型" data-platform="拼多多">米乐模型</label>
-                        <label><input type="radio" th:field="*{shop}" value="星域模型" data-platform="拼多多">星域模型</label>
-                        <label><input type="radio" th:field="*{shop}" value="幻影模玩" data-platform="淘宝">幻影模玩</label>
-                        <label><input type="radio" th:field="*{shop}" value="完美动漫" data-platform="淘宝">完美动漫</label>
-                        <label><input type="radio" th:field="*{shop}" value="维利动漫" data-platform="抖店">维利动漫</label>
-                    </div>
+                <div class="form-actions sale-entry-actions">
+                    <button class="btn" type="button" data-modal-close>取消</button>
+                    <button class="btn primary" type="submit">保存销售</button>
                 </div>
-                <label>成本价<input type="number" step="0.01" th:field="*{costPrice}" min="0" placeholder="选择库存后自动带出" readonly data-sale-cost></label>
-                <label>发出成本<input type="number" step="0.01" min="0" placeholder="选择库存后自动带出" data-sale-out-cost></label>
-                <label>销售价<input type="number" step="0.01" th:field="*{sellingPrice}" min="0" required data-sale-price></label>
-                <label>手续费<input type="number" step="0.01" th:field="*{charge}" min="0" value="0" data-sale-charge></label>
-                <label>利润<input type="number" step="0.01" th:field="*{profit}" readonly data-sale-profit></label>
-                <div class="wide form-field">
-                    <span>商品来源</span>
-                    <div class="radio-group compact-options">
-                        <label><input type="radio" th:field="*{goodsSource}" value="进货" checked required>进货</label>
-                        <label><input type="radio" th:field="*{goodsSource}" value="倒卖">倒卖</label>
-                        <label><input type="radio" th:field="*{goodsSource}" value="搬砖">搬砖</label>
-                    </div>
-                </div>
-                <label>备注<input th:field="*{remark}" maxlength="100"></label>
-                <div class="form-actions wide"><button class="btn" type="button" data-modal-close>取消</button><button class="btn primary" type="submit">保存销售</button></div>
             </form>
         </section>
     </div>
@@ -186,7 +219,7 @@
                 <button class="icon-btn" type="button" data-modal-close>×</button>
             </div>
             <div class="table-wrap">
-                <table>
+                <table class="responsive-table data-table table-stock-picker">
                     <thead>
                     <tr>
                         <th>操作</th>
@@ -203,22 +236,22 @@
                     </thead>
                     <tbody>
                     <tr th:each="st : ${stockList}" th:attr="data-picker-goods=${st.goodsId}">
-                        <td>
+                        <td class="table-actions" data-label="操作">
                             <button class="btn small primary" type="button"
                                     data-stock-pick
                                     th:attr="data-stock-id=${st.id},data-goods-id=${st.goodsId},data-stock-name=${st.goodsName},data-stock-count=${st.stock},data-stock-price=${st.unitPrice},data-stock-cost=${st.cost},data-stock-selling=${st.sellingPrice},data-stock-amount=${st.stockTotalAmount}">
                                 选择
                             </button>
                         </td>
-                        <td th:text="${st.goodsName}">商品</td>
-                        <td><span class="stock-badge" th:text="${st.stock}">0</span></td>
-                        <td th:text="${@money.format(st.stockTotalAmount)}">￥0.00</td>
-                        <td th:text="${st.ctns}">0</td>
-                        <td th:text="${st.number}">0</td>
-                        <td th:text="${@money.format(st.unitPrice)}">￥0.00</td>
-                        <td th:text="${@money.format(st.cost)}">￥0.00</td>
-                        <td th:text="${@money.format(st.sellingPrice)}">￥0.00</td>
-                        <td th:text="${#temporals.format(st.createdTime, 'yyyy-MM-dd HH:mm')}">时间</td>
+                        <td class="table-primary" data-label="商品" th:text="${st.goodsName}">商品</td>
+                        <td data-label="库存"><span class="stock-badge" th:text="${st.stock}">0</span></td>
+                        <td data-label="库存总金额" th:text="${@money.format(st.stockTotalAmount)}">￥0.00</td>
+                        <td data-label="箱数" th:text="${st.ctns}">0</td>
+                        <td data-label="盒数" th:text="${st.number}">0</td>
+                        <td data-label="进货单价" th:text="${@money.format(st.unitPrice)}">￥0.00</td>
+                        <td data-label="发出成本" th:text="${@money.format(st.cost)}">￥0.00</td>
+                        <td data-label="销售价格" th:text="${@money.format(st.sellingPrice)}">￥0.00</td>
+                        <td data-label="入库时间" th:text="${#temporals.format(st.createdTime, 'yyyy-MM-dd HH:mm')}">时间</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(stockList)}">
                         <td colspan="10" class="empty">暂无可用库存</td>
