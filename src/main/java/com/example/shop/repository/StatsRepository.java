@@ -46,8 +46,7 @@ public class StatsRepository {
         stats.setTotalProfit(stats.getNetProfit());
         stats.setTodayIncome(doubleValue("SELECT COALESCE(SUM(profit),0) FROM t_shop_sale WHERE createdTime >= ? AND createdTime < ?", todayStart, tomorrowStart));
         stats.setTodaySaleAmount(doubleValue("SELECT COALESCE(SUM(sellingPrice),0) FROM t_shop_sale WHERE createdTime >= ? AND createdTime < ?", todayStart, tomorrowStart));
-        double todayCostPrice = doubleValue("SELECT COALESCE(SUM(costPrice),0) FROM t_shop_sale WHERE createdTime >= ? AND createdTime < ?", todayStart, tomorrowStart);
-        stats.setTodayProfit(stats.getTodaySaleAmount() - todayCostPrice);
+        stats.setTodayProfit(stats.getTodayIncome());
         stats.setTodayOrderCount(intValue("SELECT COUNT(*) FROM t_shop_sale WHERE createdTime >= ? AND createdTime < ?", todayStart, tomorrowStart));
         stats.setMonthIncome(doubleValue("SELECT COALESCE(SUM(profit),0) FROM t_shop_sale WHERE createdTime >= ? AND createdTime < ?", monthStart, nextMonthStart));
         double monthExtraCost = doubleValue("SELECT COALESCE(SUM(amount),0) FROM t_shop_extra_cost WHERE createdTime >= ? AND createdTime < ?", monthStart, nextMonthStart);

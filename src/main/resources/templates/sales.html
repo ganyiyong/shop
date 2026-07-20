@@ -119,9 +119,9 @@
                         <td colspan="2" data-label="汇总">累计：</td>
                         <td data-label="销售数量" th:text="${statsSaleCount}">0</td>
                         <td data-label="成本价" th:text="${@money.format(statsCostPrice)}">￥0.00</td>
-                        <td data-label="销售价" th:text="${@money.format(statsSellingPrice)}">￥0.00</td>
+                        <td class="sales-total-price" data-label="销售价" th:text="${@money.format(statsSellingPrice)}">￥0.00</td>
                         <td data-label="手续费" th:text="${@money.format(statsCharge)}">￥0.00</td>
-                        <td data-label="利润" th:text="${@money.format(statsProfit)}">￥0.00</td>
+                        <td class="sales-total-profit" data-label="利润" th:text="${@money.format(statsProfit)}">￥0.00</td>
                     </tr>
                     </tfoot>
                 </table>
@@ -177,8 +177,8 @@
                     <section class="sale-form-section" aria-labelledby="saleAmountTitle">
                         <h3 id="saleAmountTitle">价格结算</h3>
                         <div class="sale-money-grid">
-                            <label class="sale-derived-field">进货单价<input type="number" step="0.01" th:field="*{costPrice}" min="0" placeholder="选择库存后带出" readonly data-sale-cost></label>
-                            <label class="sale-derived-field">发出成本<input type="number" step="0.01" min="0" placeholder="选择库存后带出" data-sale-out-cost></label>
+                            <label class="sale-derived-field">进货单价<input type="number" step="0.01" min="0" placeholder="选择库存后带出" readonly data-sale-cost></label>
+                            <label class="sale-derived-field">发出成本<input type="number" step="0.01" th:field="*{costPrice}" min="0" placeholder="选择库存后带出" data-sale-out-cost></label>
                             <label class="sale-price-field">销售价<input type="number" step="0.01" th:field="*{sellingPrice}" min="0" required data-sale-price></label>
                             <label class="sale-derived-field">手续费<input type="number" step="0.01" th:field="*{charge}" min="0" value="0" readonly data-sale-charge></label>
                             <label class="sale-derived-field sale-profit-field">预计利润<input type="number" step="0.01" th:field="*{profit}" readonly data-sale-profit></label>

@@ -42,7 +42,8 @@ public class SaleService {
     public void create(Sale sale) {
         sale.setPlatform(resolvePlatform(sale.getShop()));
         Stock selectedStock = resolveStock(sale);
-        double costPrice = selectedStock == null || selectedStock.getCost() == null ? 0D : selectedStock.getCost();
+        double defaultCostPrice = selectedStock == null || selectedStock.getCost() == null ? 0D : selectedStock.getCost();
+        double costPrice = sale.getCostPrice() == null ? defaultCostPrice : sale.getCostPrice();
         sale.setCostPrice(costPrice);
         double sellingPrice = sale.getSellingPrice() == null ? 0D : sale.getSellingPrice();
         double charge = roundMoney(sellingPrice * 0.006D);

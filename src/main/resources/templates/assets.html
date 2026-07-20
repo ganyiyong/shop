@@ -4,14 +4,19 @@
 <body>
 <th:block th:fragment="content">
     <section class="toolbar panel flat asset-filter-panel" data-mobile-collapse>
-        <button class="asset-filter-toggle" type="button" data-mobile-collapse-toggle aria-expanded="false">
-            <span>
-                <b>筛选条件</b>
-                <small th:text="${#temporals.format(month.atDay(1), 'yyyy年 M月') + ' · 对比 ' + #temporals.format(compareMonth.atDay(1), 'yyyy年 M月') + ' · 点击展开'}">2026年 5月 · 对比 2026年 4月 · 点击展开</small>
+        <button class="asset-filter-toggle" type="button" data-mobile-collapse-toggle
+                aria-expanded="false" aria-controls="assetFilterBody">
+            <span class="asset-filter-toggle__icon" aria-hidden="true">
+                <svg class="ui-icon"><use href="/assets/icons.svg#filter"></use></svg>
             </span>
-            <i aria-hidden="true"></i>
+            <span class="asset-filter-toggle__copy">
+                <b>月份筛选</b>
+                <small th:text="${#temporals.format(month.atDay(1), 'yyyy年 M月') + ' · 对比 ' + #temporals.format(compareMonth.atDay(1), 'yyyy年 M月')}">2026年 5月 · 对比 2026年 4月</small>
+            </span>
+            <span class="asset-filter-toggle__state" data-mobile-collapse-state>展开</span>
+            <svg class="ui-icon asset-filter-toggle__chevron" aria-hidden="true"><use href="/assets/icons.svg#chevron-down"></use></svg>
         </button>
-        <div class="asset-filter-body" data-mobile-collapse-body>
+        <div class="asset-filter-body" id="assetFilterBody" data-mobile-collapse-body>
             <form class="search-form asset-search-form" th:action="@{/assets}">
                 <label>统计月份
                     <button class="date-range-trigger month-trigger" type="button" data-month-picker="month">
@@ -48,7 +53,7 @@
             </div>
             <div>
                 <small>本月存款</small>
-                <strong th:text="${@money.format(monthDeposit)}">￥0.00</strong>
+                <strong class="cash-amount-green" th:text="${@money.format(monthDeposit)}">￥0.00</strong>
             </div>
         </div>
     </section>

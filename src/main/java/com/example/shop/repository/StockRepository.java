@@ -56,6 +56,14 @@ public class StockRepository {
                 "ORDER BY s.createdTime ASC, s.id ASC ", RowMappers.STOCK, goodsId);
     }
 
+    public List<Stock> findAvailableForSale() {
+        return jdbcTemplate.query("SELECT s.*, " + goodsNameSql() + " goodsName " +
+                "FROM t_shop_stock s " +
+                "INNER JOIN t_shop_goods g ON g.id = s.goodsId " +
+                "WHERE s.stock > 0 AND g.deleted='0' AND g.state='0' " +
+                "ORDER BY g.sortKey DESC, g.name, s.createdTime DESC, s.id DESC ", RowMappers.STOCK);
+    }
+
     public Stock findById(int id) {
         List<Stock> stocks = jdbcTemplate.query("SELECT s.*, " + goodsNameSql() + " goodsName " +
                 "FROM t_shop_stock s " +

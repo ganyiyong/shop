@@ -362,13 +362,38 @@
   syncMobileMenuAccessibility();
   document.querySelectorAll('[data-mobile-collapse]').forEach(function (panel) {
     var button = panel.querySelector('[data-mobile-collapse-toggle]');
+    var body = panel.querySelector('[data-mobile-collapse-body]');
+    var state = button && button.querySelector('[data-mobile-collapse-state]');
     if (!button) return;
-    button.addEventListener('click', function () {
-      var isOpen = panel.classList.toggle('open');
+
+    function syncCollapseState() {
+      var isMobile = window.matchMedia('(max-width: 900px)').matches;
+      var isOpen = panel.classList.contains('open');
       button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      var hint = button.querySelector('small');
-      if (hint) hint.textContent = hint.textContent.replace(isOpen ? '点击展开' : '点击收起', isOpen ? '点击收起' : '点击展开');
+      if (state) state.textContent = isOpen ? '收起' : '展开';
+      if (!body) return;
+      if (isMobile) {
+        body.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+        body.inert = !isOpen;
+        if (!isOpen && body.contains(document.activeElement)) button.focus();
+      } else {
+        body.removeAttribute('aria-hidden');
+        body.inert = false;
+      }
+    }
+
+    button.addEventListener('click', function () {
+      panel.classList.toggle('open');
+      syncCollapseState();
     });
+    panel.addEventListener('keydown', function (event) {
+      if (event.key !== 'Escape' || !panel.classList.contains('open')) return;
+      panel.classList.remove('open');
+      syncCollapseState();
+      button.focus();
+    });
+    window.addEventListener('resize', syncCollapseState);
+    syncCollapseState();
   });
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {

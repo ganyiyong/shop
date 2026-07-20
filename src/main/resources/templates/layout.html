@@ -22,6 +22,10 @@
         <span class="mobile-brand-mark" aria-hidden="true"><svg class="ui-icon"><use href="/assets/icons.svg#package"></use></svg></span>
         <strong th:text="${title}">首页</strong>
         <div class="mobile-actions">
+            <div class="topbar-sales" aria-label="本月销售额">
+                <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#coins"></use></svg>
+                <div><strong th:text="${@money.format(layoutMonthSaleAmount)}">￥0.00</strong></div>
+            </div>
             <button th:if="${active == 'stats'}" class="mobile-sale-btn" type="button" data-modal-open="saleModal" aria-label="录入销售">
                 <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#plus"></use></svg>
             </button>

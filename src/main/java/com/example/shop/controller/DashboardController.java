@@ -33,7 +33,7 @@ public class DashboardController {
         model.addAttribute("stockRanking", statsRepository.stockRanking());
         model.addAttribute("monthlySales", statsRepository.monthlySales());
         model.addAttribute("goodsList", goodsRepository.findInStock());
-        model.addAttribute("stockList", stockRepository.findPage(null, true, 1, Integer.MAX_VALUE).getRecords());
+        model.addAttribute("stockList", stockRepository.findAvailableForSale());
         Sale sale = new Sale();
         sale.setShop("模型小屋");
         sale.setGoodsSource("进货");
