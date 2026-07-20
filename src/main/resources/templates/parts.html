@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: layout('补件记录', '高达拆件销售与利润核算', 'parts', ~{::content})">
+<body>
+<th:block th:fragment="content">
+    <div class="part-page">
+        <section class="panel part-toolbar">
+            <form class="search-form" th:action="@{/parts}" id="partFilterForm">
+            
+                <select name="goodsId" data-auto-submit>
+                    <option value="">全部商品</option>
+                    <option th:each="g : ${filterGoodsList}"
+                            th:value="${g.id}"
+                            th:selected="${goodsId == g.id}"
+                            th:text="${g.name + (g.type == null || g.type == '' ? '' : ':' + g.type) + (g.model == null || g.model == '' ? '' : ':' + g.model) + '【库存 ' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option>
+                </select>
+               
+                <div class="search-form__actions">
+                    <button class="btn" type="submit">筛选</button>
+                    <button class="btn primary" type="button" data-modal-open="partBatchModal" data-modal-title="新增补件记录"
+                            th:attr="data-goodsid=${goodsId}">
+                        <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#plus"></use></svg>新增补件记录
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="metric-grid part-summary">
+            <article class="metric-card accent-blue">
+                <span>补件记录</span>
+                <strong th:text="${summary.batchCount}">0</strong>
+                <small th:text="${summary.partCount + ' 条零件销售'}">0 条零件销售</small>
+            </article>
+            <article class="metric-card accent-green">
+                <span>零件总毛利</span>
+                <strong class="cash-amount-green" th:text="${@money.format(summary.grossProfit)}">￥0.00</strong>
+                <small th:text="${'销售额 ' + @money.format(summary.sellingAmount)}">销售额 ￥0.00</small>
+            </article>
+            <article class="metric-card accent-yellow">
+                <span>商品成本</span>
+                <strong th:text="${@money.format(summary.productCost)}">￥0.00</strong>
+                <small>整件商品成本合计</small>
+            </article>
+            <article class="metric-card accent-red part-total-card">
+                <span>总利润</span>
+                <strong th:classappend="${summary.totalProfit < 0} ? 'text-bad' : 'cash-amount-green'"
+                        th:text="${@money.format(summary.totalProfit)}">￥0.00</strong>
+                <small>总毛利 - 商品成本</small>
+            </article>
+        </section>
+
+        <div class="part-workspace">
+            <aside class="panel part-batch-panel">
+                <div class="panel-head part-batch-head">
+                    <div>
+                        <span class="section-label">商品筛选</span>
+                        <h2>补件记录</h2>
+                    </div>
+                    <span class="soft-label" th:text="${#lists.size(batches) + ' 个'}">0 个</span>
+                </div>
+                <div class="part-batch-list" th:if="${!#lists.isEmpty(batches)}">
+                    <a class="part-batch-item" th:each="batch : ${batches}"
+                       th:classappend="${selectedBatch != null and selectedBatch.id == batch.id} ? 'active'"
+                       th:href="@{/parts(goodsId=${goodsId},batchId=${batch.id})}"
+                       th:attr="data-detail-url=@{/parts/detail(goodsId=${goodsId},batchId=${batch.id})},aria-current=${selectedBatch != null and selectedBatch.id == batch.id ? 'true' : null}"
+                       data-part-batch-link>
+                        <span class="part-batch-avatar" th:text="${#strings.isEmpty(batch.name) ? '件' : #strings.substring(batch.name, 0, 1)}">件</span>
+                        <span class="part-batch-copy">
+                            <strong th:text="${batch.name}">商品名称</strong>
+                            <small th:text="${batch.partCount + ' 条零件'}">0 条零件</small>
+                        </span>
+                        <span class="part-batch-profit" th:classappend="${batch.totalProfit < 0} ? 'loss'">
+                            <small>总利润</small>
+                            <b th:text="${@money.format(batch.totalProfit)}">￥0.00</b>
+                        </span>
+                    </a>
+                </div>
+                <div class="part-batch-empty" th:if="${#lists.isEmpty(batches)}">
+                    <span class="part-empty-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#puzzle"></use></svg></span>
+                    <strong>暂无补件记录</strong>
+                    <small>新增记录后即可录入零件</small>
+                    <button class="btn primary small" type="button" data-modal-open="partBatchModal" data-modal-title="新增补件记录"
+                            th:attr="data-goodsid=${goodsId}">
+                        <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#plus"></use></svg>新增记录
+                    </button>
+                </div>
+            </aside>
+
+            <th:block th:fragment="detail">
+            <section class="panel part-detail-panel" th:if="${selectedBatch != null}" data-part-detail>
+                <div class="part-detail-head">
+                    <div class="part-detail-title">
+                        <span class="section-label">零件销售明细</span>
+                        <h2 th:text="${selectedBatch.name}">商品名称</h2>
+                        <p th:if="${!#strings.isEmpty(selectedBatch.remark)}" th:text="${selectedBatch.remark}">备注</p>
+                    </div>
+                    <div class="part-detail-actions">
+                        <button class="icon-action" type="button" title="编辑补件记录" aria-label="编辑补件记录"
+                                data-modal-open="partBatchModal" data-modal-title="编辑补件记录"
+                                th:attr="data-batchid=${selectedBatch.id},data-goodsid=${selectedBatch.goodsId},data-productcost=${selectedBatch.productCost},data-batchremark=${selectedBatch.remark}">
+                            <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#pencil"></use></svg>
+                        </button>
+                        <form method="post" th:action="@{/parts/batch/delete}" onsubmit="return confirm('确认删除该补件记录及其全部零件明细？')">
+                            <input type="hidden" name="id" th:value="${selectedBatch.id}">
+                            <input type="hidden" name="goodsId" th:value="${goodsId}">
+                            <button class="icon-action danger" type="submit" title="删除补件记录" aria-label="删除补件记录">
+                                <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#trash"></use></svg>
+                            </button>
+                        </form>
+                        <button class="btn primary" type="button" data-modal-open="partSaleModal" data-modal-title="录入零件销售"
+                                th:attr="data-batchid=${selectedBatch.id}">
+                            <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#plus"></use></svg>录入零件
+                        </button>
+                    </div>
+                </div>
+
+                <div class="part-batch-metrics">
+                    <div><span>售价合计</span><strong th:text="${@money.format(selectedBatch.sellingAmount)}">￥0.00</strong></div>
+                    <div><span>零件总毛利</span><strong class="text-good" th:text="${@money.format(selectedBatch.grossProfit)}">￥0.00</strong></div>
+                    <div><span>商品成本</span><strong th:text="${@money.format(selectedBatch.productCost)}">￥0.00</strong></div>
+                    <div class="part-net-profit"><span>总利润</span><strong th:classappend="${selectedBatch.totalProfit < 0} ? 'text-bad' : 'text-good'" th:text="${@money.format(selectedBatch.totalProfit)}">￥0.00</strong></div>
+                </div>
+
+                <div class="table-wrap part-table-wrap">
+                    <table class="responsive-table data-table table-parts">
+                        <thead>
+                        <tr><th>零件编号</th><th>售价</th><th>零件成本</th><th>毛利</th><th>备注</th><th class="part-time-column">录入时间</th><th>操作</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="sale : ${sales}">
+                            <td class="table-primary" data-label="零件编号"><strong class="part-number" th:text="${sale.partNumber}">A-16</strong></td>
+                            <td data-label="售价" th:text="${@money.format(sale.sellingPrice)}">￥0.00</td>
+                            <td data-label="零件成本" th:text="${@money.format(sale.cost)}">￥0.00</td>
+                            <td class="text-good" data-label="毛利" th:text="${@money.format(sale.profit)}">￥0.00</td>
+                            <td data-label="备注" th:text="${#strings.isEmpty(sale.remark) ? '-' : sale.remark}">-</td>
+                            <td class="part-time-column" data-label="录入时间" th:text="${#temporals.format(sale.createdTime, 'yyyy-MM-dd HH:mm')}">时间</td>
+                            <td class="table-actions" data-label="操作">
+                                <div class="actions">
+                                    <button class="icon-action" type="button" title="编辑零件" aria-label="编辑零件"
+                                            data-modal-open="partSaleModal" data-modal-title="编辑零件销售"
+                                            th:attr="data-saleid=${sale.id},data-batchid=${sale.batchId},data-partnumber=${sale.partNumber},data-sellingprice=${sale.sellingPrice},data-partcost=${sale.cost},data-saleremark=${sale.remark}">
+                                        <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#pencil"></use></svg>
+                                    </button>
+                                    <form method="post" th:action="@{/parts/sale/delete}" onsubmit="return confirm('确认删除该零件记录？')">
+                                        <input type="hidden" name="id" th:value="${sale.id}">
+                                        <input type="hidden" name="batchId" th:value="${selectedBatch.id}">
+                                        <input type="hidden" name="goodsId" th:value="${goodsId}">
+                                        <button class="icon-action danger" type="submit" title="删除零件" aria-label="删除零件">
+                                            <svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#trash"></use></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(sales)}">
+                            <td colspan="7" class="empty">该商品暂未录入零件销售</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="panel part-detail-panel part-detail-empty" th:if="${selectedBatch == null}" data-part-detail>
+                <span class="part-empty-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#puzzle"></use></svg></span>
+                <h2>选择一条补件记录</h2>
+                <p>零件明细与利润汇总将在这里显示</p>
+            </section>
+            </th:block>
+        </div>
+    </div>
+
+    <div class="modal" id="partBatchModal" aria-hidden="true">
+        <div class="modal-mask" data-modal-close></div>
+        <section class="modal-panel small-modal">
+            <div class="modal-head"><h2>新增补件记录</h2><button class="icon-btn" type="button" data-modal-close>×</button></div>
+            <form class="grid-form" method="post" th:action="@{/parts/batch/save}" th:object="${batchForm}">
+                <input type="hidden" th:field="*{id}" data-field="batchid">
+                <label class="wide">商品
+                    <select th:field="*{goodsId}" data-field="goodsid" required>
+                        <option value="">请选择商品</option>
+                        <option th:each="g : ${filterGoodsList}"
+                                th:value="${g.id}"
+                                th:text="${g.name + (g.type == null || g.type == '' ? '' : ':' + g.type) + (g.model == null || g.model == '' ? '' : ':' + g.model) + '【库存 ' + (g.stock == null ? 0 : g.stock) + '】'}">商品</option>
+                    </select>
+                </label>
+                <label class="wide">整件商品成本<input type="number" step="0.01" min="0" th:field="*{productCost}" data-field="productcost" placeholder="0.00" required></label>
+                <label class="wide">备注<textarea th:field="*{remark}" data-field="batchremark" maxlength="200" rows="3"></textarea></label>
+                <div class="form-actions wide"><button class="btn" type="button" data-modal-close>取消</button><button class="btn primary" type="submit">保存商品</button></div>
+            </form>
+        </section>
+    </div>
+
+    <div class="modal" id="partSaleModal" aria-hidden="true">
+        <div class="modal-mask" data-modal-close></div>
+        <section class="modal-panel small-modal">
+            <div class="modal-head"><h2>录入零件销售</h2><button class="icon-btn" type="button" data-modal-close>×</button></div>
+            <form class="grid-form" method="post" th:action="@{/parts/sale/save}" th:object="${saleForm}" data-part-sale-form>
+                <input type="hidden" th:field="*{id}" data-field="saleid">
+                <input type="hidden" th:field="*{batchId}" data-field="batchid">
+                <input type="hidden" name="goodsId" th:value="${goodsId}">
+                <label class="wide">零件编号<input th:field="*{partNumber}" data-field="partnumber" data-part-numbers maxlength="500" placeholder="例：A-16, B-7" autocomplete="off" required></label>
+                <label>总售价<input type="number" step="0.01" min="0" th:field="*{sellingPrice}" data-field="sellingprice" data-part-selling placeholder="0.00" required></label>
+                <label>总成本<input type="number" step="0.01" min="0" th:field="*{cost}" data-field="partcost" data-part-cost placeholder="0.00" required></label>
+                <label class="wide">每条毛利<input type="number" step="0.01" data-part-profit readonly tabindex="-1" value="0.00"></label>
+                <label class="wide">备注<textarea th:field="*{remark}" data-field="saleremark" maxlength="200" rows="3" placeholder="例：有两板"></textarea></label>
+                <div class="form-actions wide"><button class="btn" type="button" data-modal-close>取消</button><button class="btn primary" type="submit">保存零件</button></div>
+            </form>
+        </section>
+    </div>
+</th:block>
+</body>
+</html>

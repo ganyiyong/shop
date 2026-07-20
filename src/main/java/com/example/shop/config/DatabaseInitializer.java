@@ -64,6 +64,28 @@ public class DatabaseInitializer {
                 "  createdTime datetime, " +
                 "  state char(1) DEFAULT '0' " +
                 ") ");
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS t_shop_part_batch ( " +
+                "  id int AUTO_INCREMENT PRIMARY KEY, " +
+                "  goodsId int, " +
+                "  name varchar(80) NOT NULL, " +
+                "  productCost decimal(10,2) DEFAULT 0, " +
+                "  remark varchar(200), " +
+                "  createdTime datetime NOT NULL, " +
+                "  KEY idx_part_batch_created_time(createdTime) " +
+                ") ");
+        addColumnIfMissing("t_shop_part_batch", "goodsId", "int NULL AFTER id");
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS t_shop_part_sale ( " +
+                "  id int AUTO_INCREMENT PRIMARY KEY, " +
+                "  batchId int NOT NULL, " +
+                "  partNumber varchar(40) NOT NULL, " +
+                "  sellingPrice decimal(10,2) DEFAULT 0, " +
+                "  cost decimal(10,2) DEFAULT 0, " +
+                "  profit decimal(10,2) DEFAULT 0, " +
+                "  remark varchar(200), " +
+                "  createdTime datetime NOT NULL, " +
+                "  KEY idx_part_sale_batch(batchId), " +
+                "  KEY idx_part_sale_created_time(createdTime) " +
+                ") ");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS t_shop_asset_snapshot ( " +
                 "  id int AUTO_INCREMENT PRIMARY KEY, " +
                 "  month varchar(7) NOT NULL, " +

@@ -55,6 +55,32 @@ CREATE TABLE IF NOT EXISTS `t_shop_stock` (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='库存';
 
+CREATE TABLE IF NOT EXISTS `t_shop_part_batch` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `goodsId` int(11) DEFAULT NULL COMMENT '关联商品ID',
+  `name` varchar(80) NOT NULL COMMENT '拆件商品名称',
+  `productCost` decimal(10,2) DEFAULT '0.00' COMMENT '整件商品成本',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
+  `createdTime` datetime NOT NULL COMMENT '记录时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_part_batch_goods` (`goodsId`) USING BTREE,
+  KEY `idx_part_batch_created_time` (`createdTime`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='补件拆件商品';
+
+CREATE TABLE IF NOT EXISTS `t_shop_part_sale` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `batchId` int(11) NOT NULL COMMENT '拆件商品ID',
+  `partNumber` varchar(40) NOT NULL COMMENT '零件编号',
+  `sellingPrice` decimal(10,2) DEFAULT '0.00' COMMENT '售价',
+  `cost` decimal(10,2) DEFAULT '0.00' COMMENT '零件成本',
+  `profit` decimal(10,2) DEFAULT '0.00' COMMENT '毛利',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
+  `createdTime` datetime NOT NULL COMMENT '记录时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_part_sale_batch` (`batchId`) USING BTREE,
+  KEY `idx_part_sale_created_time` (`createdTime`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='补件销售明细';
+
 CREATE TABLE IF NOT EXISTS `t_shop_asset_snapshot` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键',
   `month` varchar(7) NOT NULL COMMENT '统计月份 yyyy-MM',

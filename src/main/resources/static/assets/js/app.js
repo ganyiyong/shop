@@ -8,6 +8,7 @@
     var heading = modal.querySelector('.modal-head h2');
     if (heading) {
       if (!heading.id) heading.id = id + 'Title';
+      if (trigger && trigger.dataset.modalTitle) heading.textContent = trigger.dataset.modalTitle;
       modal.setAttribute('aria-labelledby', heading.id);
     }
     var form = modal.querySelector('form');
@@ -58,8 +59,9 @@
       if (!button.getAttribute('aria-label')) button.setAttribute('aria-label', '关闭弹窗');
     });
   });
-  document.querySelectorAll('[data-modal-open]').forEach(function (button) {
-    button.addEventListener('click', function () { openModal(button.getAttribute('data-modal-open'), button); });
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-modal-open]');
+    if (button) openModal(button.getAttribute('data-modal-open'), button);
   });
   document.querySelectorAll('[data-modal-close]').forEach(function (button) {
     button.addEventListener('click', function () { closeModal(button); });
@@ -896,6 +898,120 @@
     });
   }
 
+  function setupPartSaleCalculator() {
+    var form = document.querySelector('[data-part-sale-form]');
+    if (!form) return;
+    var partNumbersInput = form.querySelector('[data-part-numbers]');
+    var sellingInput = form.querySelector('[data-part-selling]');
+    var costInput = form.querySelector('[data-part-cost]');
+    var profitInput = form.querySelector('[data-part-profit]');
+    if (!partNumbersInput || !sellingInput || !costInput || !profitInput) return;
+
+    function number(value) {
+      var parsed = Number(value || 0);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function recalculate() {
+      var partCount = partNumbersInput.value.split(/[,，]/).filter(function (value) {
+        return value.trim().length > 0;
+      }).length || 1;
+      var sellingPrice = number(sellingInput.value) / partCount;
+      var cost = number(costInput.value) / partCount;
+      var profit = sellingPrice - cost;
+      profitInput.value = (Math.round(profit * 100) / 100).toFixed(2);
+      profitInput.classList.toggle('text-bad', profit < 0);
+      profitInput.classList.toggle('text-good', profit >= 0);
+    }
+
+    partNumbersInput.addEventListener('input', recalculate);
+    sellingInput.addEventListener('input', recalculate);
+    costInput.addEventListener('input', recalculate);
+    form.addEventListener('submit', recalculate);
+    document.addEventListener('click', function (event) {
+      if (event.target.closest('[data-modal-open="partSaleModal"]')) {
+        window.setTimeout(recalculate, 0);
+      }
+    });
+    recalculate();
+  }
+
+  function setupPartBatchLoader() {
+    var workspace = document.querySelector('.part-workspace');
+    if (!workspace || !window.fetch) return;
+    var controller = null;
+
+    function matchingLink(url) {
+      var batchId = new URL(url, window.location.href).searchParams.get('batchId');
+      return Array.prototype.find.call(document.querySelectorAll('[data-part-batch-link]'), function (link) {
+        return new URL(link.href, window.location.href).searchParams.get('batchId') === batchId;
+      });
+    }
+
+    function setActive(link) {
+      document.querySelectorAll('[data-part-batch-link]').forEach(function (item) {
+        var active = item === link;
+        item.classList.toggle('active', active);
+        if (active) item.setAttribute('aria-current', 'true');
+        else item.removeAttribute('aria-current');
+      });
+    }
+
+    function load(link, updateHistory) {
+      var currentDetail = workspace.querySelector('[data-part-detail]');
+      if (!currentDetail || !link.dataset.detailUrl) {
+        window.location.assign(link.href);
+        return;
+      }
+      if (controller) controller.abort();
+      controller = new AbortController();
+      var requestController = controller;
+      currentDetail.classList.add('is-loading');
+      currentDetail.setAttribute('aria-busy', 'true');
+      setActive(link);
+
+      fetch(link.dataset.detailUrl, {
+        signal: requestController.signal,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      }).then(function (response) {
+        if (!response.ok) throw new Error('Part detail request failed');
+        return response.text();
+      }).then(function (html) {
+        if (requestController !== controller) return;
+        var template = document.createElement('template');
+        template.innerHTML = html.trim();
+        var nextDetail = template.content.querySelector('[data-part-detail]');
+        if (!nextDetail) throw new Error('Part detail response is invalid');
+        currentDetail.replaceWith(nextDetail);
+        if (updateHistory) window.history.pushState({ partBatch: true }, '', link.href);
+      }).catch(function (error) {
+        if (error.name === 'AbortError') return;
+        window.location.assign(link.href);
+      }).finally(function () {
+        if (requestController !== controller) return;
+        controller = null;
+        var detail = workspace.querySelector('[data-part-detail]');
+        if (detail) {
+          detail.classList.remove('is-loading');
+          detail.removeAttribute('aria-busy');
+        }
+      });
+    }
+
+    workspace.addEventListener('click', function (event) {
+      var link = event.target.closest('[data-part-batch-link]');
+      if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      load(link, true);
+    });
+
+    window.addEventListener('popstate', function () {
+      var link = matchingLink(window.location.href);
+      if (link) load(link, false);
+      else window.location.reload();
+    });
+  }
+
   setupSearchableGoodsSelects();
   setupDatepickerRange();
   setupSalePlatform();
@@ -905,4 +1021,6 @@
   setupResponsiveDetails();
   setupDashboardCharts();
   setupLoginRemember();
+  setupPartSaleCalculator();
+  setupPartBatchLoader();
 })();

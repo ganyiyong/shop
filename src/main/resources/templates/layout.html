@@ -54,6 +54,7 @@
             <a title="商品列表" th:classappend="${active == 'goods'} ? 'active'" th:href="@{/goods}" th:attr="aria-current=${active == 'goods' ? 'page' : null}"><span class="nav-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#tag"></use></svg></span><span class="nav-label">商品列表</span></a>
             <a title="库存管理" th:classappend="${active == 'stock'} ? 'active'" th:href="@{/stock}" th:attr="aria-current=${active == 'stock' ? 'page' : null}"><span class="nav-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#package"></use></svg></span><span class="nav-label">库存管理</span></a>
             <a title="额外成本" th:classappend="${active == 'costs'} ? 'active'" th:href="@{/costs}" th:attr="aria-current=${active == 'costs' ? 'page' : null}"><span class="nav-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#receipt"></use></svg></span><span class="nav-label">额外成本</span></a>
+            <a title="补件记录" th:classappend="${active == 'parts'} ? 'active'" th:href="@{/parts}" th:attr="aria-current=${active == 'parts' ? 'page' : null}"><span class="nav-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#puzzle"></use></svg></span><span class="nav-label">补件记录</span></a>
             <a title="销售管理" th:classappend="${active == 'sales'} ? 'active'" th:href="@{/sales}" th:attr="aria-current=${active == 'sales' ? 'page' : null}"><span class="nav-icon"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#bag"></use></svg></span><span class="nav-label">销售管理</span></a>
         </nav>
         <div class="side-footer">
@@ -109,7 +110,7 @@
         <a th:classappend="${active == 'stats'} ? 'active'" th:href="@{/dashboard}"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#dashboard"></use></svg><span>概览</span></a>
         <a th:classappend="${active == 'assets'} ? 'active'" th:href="@{/assets}"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#wallet"></use></svg><span>资产</span></a>
         <a th:classappend="${active == 'sales'} ? 'active'" th:href="@{/sales}"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#bag"></use></svg><span>销售</span></a>
-        <button type="button" data-mobile-more th:classappend="${active == 'goods' or active == 'stock' or active == 'inventoryStats' or active == 'costs'} ? 'active'" aria-label="打开全部导航" aria-controls="mainSidebar" aria-expanded="false"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#more"></use></svg><span>更多</span></button>
+        <button type="button" data-mobile-more th:classappend="${active == 'goods' or active == 'stock' or active == 'inventoryStats' or active == 'costs' or active == 'parts'} ? 'active'" aria-label="打开全部导航" aria-controls="mainSidebar" aria-expanded="false"><svg class="ui-icon" aria-hidden="true"><use href="/assets/icons.svg#more"></use></svg><span>更多</span></button>
     </nav>
 </div>
 <script th:src="@{/assets/js/app.js(v=${#dates.createNow().time})}"></script>
